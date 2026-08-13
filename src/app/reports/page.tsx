@@ -1,116 +1,128 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
-import { initialPayments } from "@/lib/store";
-import { Download, Printer } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { Payment } from "@/lib/types";
+import { FileText, Printer, DollarSign } from "lucide-react";
 
 export default function ReportsPage() {
-  const [payments] = useState(initialPayments);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterMethod, setFilterMethod] = useState("ALL");
 
-  const handleExportCSV = () => {
-    alert("Exporting Collection Summary & Ledger to Excel/CSV...");
-  };
+  useEffect(() => {
+    const fetchReportsData = async () => {
+      setLoading(true);
+      const res = await supabase.from('payments').select('*');
+      if (res && res.data && Array.isArray(res.data)) {
+        setPayments(res.data);
+      } else {
+        setPayments([]);
+      }
+      setLoading(false);
+    };
+    fetchReportsData();
+  }, []);
 
-  const handlePrintPDF = () => {
-    window.print();
-  };
+  const safePayments = Array.isArray(payments) ? payments : [];
+
+  const filteredPayments = safePayments.filter((p: Payment) => {
+    if (!p) return false;
+    if (filterMethod === "ALL") return true;
+    return p.payment_method === filterMethod;
+  });
+
+  const totalCollected = filteredPayments.reduce((acc: number, curr: Payment) => acc + (curr?.amount_paid || 0), 0);
 
   return (
-    <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}>
+    <div className="min-h-screen transition-colors duration-300 font-sans" style={{ backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}>
       <Sidebar />
-      <Header title="Financial Reports & Summaries" subtitle="Generate Professional Collection Sheets & Export Ledger Logs" />
+      <Header title="Financial Reports & Daily Collection Sheet" subtitle="Generate & Export Printable Payment Ledgers directly from Supabase DB" />
 
       <main className="ml-64 p-6 space-y-6">
-        {/* Actions & Filters */}
+        {/* Actions & Summary Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold">Daily Collection Ledger & Exports</h2>
-            <p className="text-xs opacity-75">Formal printable audit statements for Seetu and Kandhu schemes</p>
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-[#0F766E]/20 text-[#10B981] border border-[#0F766E]/30">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs opacity-70 font-semibold">Total Collections (Selected Filter)</p>
+              <h3 className="text-2xl font-black text-emerald-500">₹{totalCollected.toLocaleString("en-IN")}</h3>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleExportCSV}
-              className="border px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all cursor-pointer"
-              style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--border-color)" }}
+            <select
+              value={filterMethod}
+              onChange={(e) => setFilterMethod(e.target.value)}
+              className="border rounded-xl text-xs font-semibold px-3 py-2 focus:outline-none focus:border-[#0F766E]"
+              style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)", color: "var(--text-main)" }}
             >
-              <Download className="w-4 h-4 text-emerald-500" />
-              <span>Export CSV / Excel</span>
-            </button>
+              <option value="ALL">All Payment Methods</option>
+              <option value="CASH">Cash Only</option>
+              <option value="UPI">UPI / PhonePe</option>
+              <option value="BANK_TRANSFER">Bank Transfer</option>
+            </select>
+
             <button
-              onClick={handlePrintPDF}
-              className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
+              onClick={() => window.print()}
+              className="bg-[#0F766E] hover:bg-[#0d645e] text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-md cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Print Official PDF Sheet</span>
+              <span>Print Collection Sheet</span>
             </button>
           </div>
         </div>
 
-        {/* Financial Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-5 rounded-2xl border glass-panel">
-            <p className="text-xs font-medium opacity-75">Total Seetu Collections (Month)</p>
-            <h3 className="text-2xl font-bold text-emerald-500 mt-1">₹8,50,000</h3>
-            <p className="text-[10px] opacity-60 mt-2">Trichy Gold Seetu Batch A</p>
-          </div>
-          <div className="p-5 rounded-2xl border glass-panel">
-            <p className="text-xs font-medium opacity-75">Total Vaara Kandhu Recovered</p>
-            <h3 className="text-2xl font-bold text-blue-500 mt-1">₹3,20,000</h3>
-            <p className="text-[10px] opacity-60 mt-2">Coimbatore Vaara Kandhu #12</p>
-          </div>
-          <div className="p-5 rounded-2xl border glass-panel">
-            <p className="text-xs font-medium opacity-75">Total Dhina Kandhu Daily Receipts</p>
-            <h3 className="text-2xl font-bold text-amber-500 mt-1">₹14,50,000</h3>
-            <p className="text-[10px] opacity-60 mt-2">Madurai Market Dhina Kandhu</p>
-          </div>
-        </div>
-
-        {/* Official Printable Receipt History Table */}
-        <div className="p-5 rounded-2xl border glass-panel space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold">Transaction History Receipts Log</h3>
-            <span className="text-xs opacity-75">Showing last 24 hours payments</span>
+        {/* Payments Table */}
+        <div className="rounded-2xl border glass-panel overflow-hidden">
+          <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: "var(--border-color)" }}>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <FileText className="w-4 h-4 text-emerald-500" />
+              <span>Receipt Ledger (Supabase DB Query)</span>
+            </h3>
+            <span className="text-xs font-mono font-bold opacity-60">{filteredPayments.length} Transactions</span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="uppercase tracking-wider text-[10px] border-b" style={{ borderColor: "var(--border-color)" }}>
-                <tr>
-                  <th className="py-3.5 px-4">Receipt No.</th>
-                  <th className="py-3.5 px-4">Member Name</th>
-                  <th className="py-3.5 px-4">Scheme Batch</th>
-                  <th className="py-3.5 px-4">Payment Method</th>
-                  <th className="py-3.5 px-4">Amount Paid</th>
-                  <th className="py-3.5 px-4">Transaction Date</th>
-                  <th className="py-3.5 px-4 text-right">Audit Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y" style={{ borderColor: "var(--border-color)" }}>
-                {payments.map((p) => (
-                  <tr key={p.id} className="hover:bg-emerald-500/5 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-emerald-500">{p.receipt_no}</td>
-                    <td className="py-3.5 px-4 font-semibold">{p.customer_name}</td>
-                    <td className="py-3.5 px-4 opacity-80">{p.batch_name}</td>
-                    <td className="py-3.5 px-4 opacity-75">
-                      <span className="px-2 py-0.5 rounded text-[10px] border font-semibold" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
-                        {p.payment_method}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-emerald-500">₹{p.amount_paid.toLocaleString("en-IN")}</td>
-                    <td className="py-3.5 px-4 opacity-70">{new Date(p.payment_date).toLocaleString("en-IN")}</td>
-                    <td className="py-3.5 px-4 text-right">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
-                        VERIFIED
-                      </span>
-                    </td>
+          {loading ? (
+            <div className="p-12 text-center text-xs opacity-70 font-mono">Querying transactions from Supabase...</div>
+          ) : filteredPayments.length === 0 ? (
+            <div className="p-12 text-center text-xs opacity-60">No payment receipts found in database for the selected filter.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="uppercase tracking-wider text-[10px] border-b" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
+                  <tr>
+                    <th className="py-3 px-4">Receipt No</th>
+                    <th className="py-3 px-4">Customer Name</th>
+                    <th className="py-3 px-4">Scheme Batch</th>
+                    <th className="py-3 px-4">Payment Method</th>
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4 text-right">Amount Paid</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y" style={{ borderColor: "var(--border-color)" }}>
+                  {filteredPayments.map((p) => (
+                    <tr key={p.id} className="hover:bg-emerald-500/5">
+                      <td className="py-3 px-4 font-mono font-bold text-emerald-500">{p.receipt_no}</td>
+                      <td className="py-3 px-4 font-semibold">{p.customer_name || "Member"}</td>
+                      <td className="py-3 px-4 opacity-80">{p.batch_name || "Scheme Batch"}</td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0F766E]/20 text-[#10B981] border border-[#0F766E]/30">
+                          {p.payment_method}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-mono opacity-70">{new Date(p.payment_date).toLocaleDateString("en-IN")}</td>
+                      <td className="py-3 px-4 font-bold text-emerald-500 text-right">₹{(p.amount_paid || 0).toLocaleString("en-IN")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </main>
     </div>

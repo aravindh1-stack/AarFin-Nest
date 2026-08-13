@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
-import { initialGroups, initialBatches } from "@/lib/store";
-import { Group } from "@/lib/types";
-import { Plus, MapPin, X, CheckCircle2, Eye, Edit3, Save } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { Group, Batch } from "@/lib/types";
+import { Plus, MapPin, X, CheckCircle2, Eye, Edit3, Save, Layers } from "lucide-react";
 
 export default function GroupsPage() {
-  const [groups, setGroups] = useState<Group[]>(initialGroups);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   // View & Edit Group State
@@ -17,7 +20,7 @@ export default function GroupsPage() {
   const [notification, setNotification] = useState<string | null>(null);
 
   // Form State for Create
-  const [selectedBatchId, setSelectedBatchId] = useState(initialBatches[0].id);
+  const [selectedBatchId, setSelectedBatchId] = useState("");
   const [groupName, setGroupName] = useState("");
   const [groupCode, setGroupCode] = useState("");
   const [routeName, setRouteName] = useState("");
@@ -31,6 +34,30 @@ export default function GroupsPage() {
   const [editAgent, setEditAgent] = useState("");
   const [editOrder, setEditOrder] = useState<number>(1);
 
+  const fetchGroupsAndBatches = async () => {
+    setLoading(true);
+    const { data: groupData } = await supabase.from('groups').select('*');
+    const { data: batchData } = await supabase.from('batches').select('*');
+    
+    if (groupData && Array.isArray(groupData)) setGroups(groupData);
+    else setGroups([]);
+
+    if (batchData && Array.isArray(batchData)) {
+      setBatches(batchData);
+      if (batchData.length > 0 && !selectedBatchId) {
+        setSelectedBatchId(batchData[0].id);
+      }
+    } else {
+      setBatches([]);
+    }
+    
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchGroupsAndBatches();
+  }, []);
+
   const openViewModal = (group: Group) => {
     setSelectedGroup(group);
     setEditName(group.group_name);
@@ -41,52 +68,45 @@ export default function GroupsPage() {
     setIsEditMode(false);
   };
 
-  const handleSaveChanges = (e: React.FormEvent) => {
+  const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedGroup) return;
 
-    const updatedGroups = groups.map((g) => {
-      if (g.id === selectedGroup.id) {
-        return {
-          ...g,
-          group_name: editName,
-          group_code: editCode.toUpperCase(),
-          route_name: editRoute,
-          collection_agent: editAgent,
-          display_order: editOrder,
-        };
-      }
-      return g;
-    });
+    const updatedCode = editCode.toUpperCase();
 
-    setGroups(updatedGroups);
+    await supabase.from('groups').update({
+      group_name: editName,
+      group_code: updatedCode,
+      route_name: editRoute,
+      collection_agent: editAgent,
+      display_order: editOrder,
+    }).eq('id', selectedGroup.id);
+
+    await fetchGroupsAndBatches();
     setSelectedGroup(null);
-    setNotification(`Collection Group '${editCode.toUpperCase()}' updated successfully!`);
+    setNotification(`Collection Group '${updatedCode}' updated in Live Supabase DB!`);
     setTimeout(() => setNotification(null), 5000);
   };
 
-  const handleCreateGroup = (e: React.FormEvent) => {
+  const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const batch = initialBatches.find((b) => b.id === selectedBatchId);
     const newGroupCode = groupCode.trim().toUpperCase() || `GRP-ROUTE-${Math.floor(10 + Math.random() * 90)}`;
 
-    const newGroup: Group = {
-      id: `g${Date.now()}`,
+    const newGroupRecord = {
       batch_id: selectedBatchId,
       group_name: groupName,
       group_code: newGroupCode,
       route_name: routeName,
       display_order: displayOrder,
-      collection_agent: collectionAgent || "Unassigned Agent",
-      customer_count: 0,
-      batch_name: batch?.batch_name,
-      created_at: new Date().toISOString()
+      collection_agent: collectionAgent || "Unassigned Agent"
     };
 
-    setGroups([newGroup, ...groups]);
+    await supabase.from('groups').insert([newGroupRecord]);
+    await fetchGroupsAndBatches();
+
     setIsCreateModalOpen(false);
-    setNotification(`Collection Group '${newGroupCode}' created successfully!`);
+    setNotification(`Collection Group '${newGroupCode}' created in Supabase DB!`);
     setTimeout(() => setNotification(null), 5000);
 
     setGroupName("");
@@ -98,7 +118,7 @@ export default function GroupsPage() {
   return (
     <div className="min-h-screen transition-colors duration-300 font-sans" style={{ backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}>
       <Sidebar />
-      <Header title="Collection Route Groups" subtitle="Partition Scheme Batches into Geographical Agent Routes" />
+      <Header title="Collection Route Groups" subtitle="Partition Scheme Batches into Geographical Agent Routes via Supabase DB" />
 
       <main className="ml-64 p-6 space-y-6">
         {notification && (
@@ -107,7 +127,7 @@ export default function GroupsPage() {
               <CheckCircle2 className="w-5 h-5 text-emerald-500" />
               <span className="text-xs font-semibold">{notification}</span>
             </div>
-            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-mono text-emerald-500">GROUP_UPDATED</span>
+            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-mono text-emerald-500">DB_UPDATE_SUCCESS</span>
           </div>
         )}
 
@@ -115,7 +135,7 @@ export default function GroupsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold tracking-tight">Geographical Route Groups</h2>
-            <p className="text-xs opacity-70">Click any group card to view details or edit parameters</p>
+            <p className="text-xs opacity-70">Direct query against public.groups table</p>
           </div>
 
           <button
@@ -127,48 +147,64 @@ export default function GroupsPage() {
           </button>
         </div>
 
-        {/* Groups Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {groups.map((group) => (
-            <div
-              key={group.id}
-              onClick={() => openViewModal(group)}
-              className="p-6 rounded-2xl border glass-panel transition-all flex flex-col justify-between cursor-pointer hover:border-[#0F766E] shadow-sm hover:shadow-md"
+        {/* Groups Cards Grid or Clean Empty State */}
+        {loading ? (
+          <div className="p-12 text-center text-xs opacity-70 font-mono">Loading route groups from Supabase...</div>
+        ) : groups.length === 0 ? (
+          <div className="p-12 rounded-2xl border text-center space-y-3 glass-panel" style={{ borderColor: "var(--border-color)" }}>
+            <MapPin className="w-10 h-10 opacity-40 mx-auto text-[#0F766E]" />
+            <h3 className="text-base font-bold">No Collection Groups Found</h3>
+            <p className="text-xs opacity-70 max-w-sm mx-auto">No geographical route groups found in the database. Click 'Create Collection Group' to partition your routes.</p>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-[#0F766E] text-white text-xs font-bold px-4 py-2 rounded-xl"
             >
-              <div>
-                <div className="flex justify-between items-start mb-3">
-                  <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#0F766E]/20 text-[#10B981] border border-[#0F766E]/30 uppercase tracking-wider font-mono">
-                    {group.group_code}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
-                    Order #{group.display_order || 1}
-                  </span>
+              Create Group
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {groups.map((group) => (
+              <div
+                key={group.id}
+                onClick={() => openViewModal(group)}
+                className="p-6 rounded-2xl border glass-panel transition-all flex flex-col justify-between cursor-pointer hover:border-[#0F766E] shadow-sm hover:shadow-md"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#0F766E]/20 text-[#10B981] border border-[#0F766E]/30 uppercase tracking-wider font-mono">
+                      {group.group_code}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
+                      Order #{group.display_order || 1}
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-bold mb-1">{group.group_name}</h3>
+                  <p className="text-xs text-emerald-500 font-semibold mb-3">{group.batch_name || "Scheme Batch"}</p>
+
+                  <div className="rounded-xl p-4 border space-y-2 mb-4" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
+                    <div className="flex items-center gap-1.5 text-xs opacity-80">
+                      <MapPin className="w-3.5 h-3.5 text-[#0F766E]" />
+                      <span className="font-semibold">{group.route_name}</span>
+                    </div>
+                    <div className="flex justify-between text-xs pt-1 border-t" style={{ borderColor: "var(--border-color)" }}>
+                      <span className="opacity-75">Field Agent:</span>
+                      <span className="font-bold text-emerald-500">{group.collection_agent}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <h3 className="text-base font-bold mb-1">{group.group_name}</h3>
-                <p className="text-xs text-emerald-500 font-semibold mb-3">{group.batch_name}</p>
-
-                <div className="rounded-xl p-4 border space-y-2 mb-4" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
-                  <div className="flex items-center gap-1.5 text-xs opacity-80">
-                    <MapPin className="w-3.5 h-3.5 text-[#0F766E]" />
-                    <span className="font-semibold">{group.route_name}</span>
-                  </div>
-                  <div className="flex justify-between text-xs pt-1 border-t" style={{ borderColor: "var(--border-color)" }}>
-                    <span className="opacity-75">Field Agent:</span>
-                    <span className="font-bold text-emerald-500">{group.collection_agent}</span>
-                  </div>
+                <div className="flex items-center justify-between pt-2 border-t text-xs font-medium" style={{ borderColor: "var(--border-color)" }}>
+                  <span className="text-emerald-500 font-bold flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5" /> Click to View / Edit
+                  </span>
+                  <span className="opacity-60">{group.customer_count || 0} Members</span>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between pt-2 border-t text-xs font-medium" style={{ borderColor: "var(--border-color)" }}>
-                <span className="text-emerald-500 font-bold flex items-center gap-1">
-                  <Eye className="w-3.5 h-3.5" /> Click to View / Edit
-                </span>
-                <span className="opacity-60">{group.customer_count || 10} Members</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* View & Edit Details Modal */}
         {selectedGroup && (
@@ -185,7 +221,6 @@ export default function GroupsPage() {
                       {selectedGroup.group_code}
                     </span>
                   </div>
-                  <p className="text-xs opacity-70">Scheme: {selectedGroup.batch_name}</p>
                 </div>
                 <button onClick={() => setSelectedGroup(null)} className="opacity-70 hover:opacity-100 cursor-pointer">
                   <X className="w-5 h-5" />
@@ -211,14 +246,6 @@ export default function GroupsPage() {
                     <div>
                       <p className="opacity-60">Assigned Agent</p>
                       <p className="font-bold text-emerald-500">{selectedGroup.collection_agent || "Unassigned"}</p>
-                    </div>
-                    <div>
-                      <p className="opacity-60">Display Order</p>
-                      <p className="font-bold">Index #{selectedGroup.display_order || 1}</p>
-                    </div>
-                    <div>
-                      <p className="opacity-60">Enrolled Members</p>
-                      <p className="font-bold">{selectedGroup.customer_count || 10} Members</p>
                     </div>
                   </div>
 
@@ -321,7 +348,7 @@ export default function GroupsPage() {
                       className="px-4 py-2 bg-[#0F766E] hover:bg-[#0d645e] text-white font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
                     >
                       <Save className="w-3.5 h-3.5" />
-                      <span>Save Changes</span>
+                      <span>Save to Supabase</span>
                     </button>
                   </div>
                 </form>
@@ -340,7 +367,7 @@ export default function GroupsPage() {
               <div className="flex justify-between items-center border-b pb-3" style={{ borderColor: "var(--border-color)" }}>
                 <div>
                   <h3 className="text-base font-bold">Create Collection Route Group</h3>
-                  <p className="text-xs opacity-70">Partition customers into specific agent route groups</p>
+                  <p className="text-xs opacity-70">Direct insertion into public.groups table</p>
                 </div>
                 <button onClick={() => setIsCreateModalOpen(false)} className="opacity-70 hover:opacity-100 cursor-pointer">
                   <X className="w-5 h-5" />
@@ -348,21 +375,23 @@ export default function GroupsPage() {
               </div>
 
               <form onSubmit={handleCreateGroup} className="space-y-4 text-xs font-sans">
-                <div>
-                  <label className="block font-semibold mb-1 opacity-80">Map to Scheme Batch</label>
-                  <select
-                    value={selectedBatchId}
-                    onChange={(e) => setSelectedBatchId(e.target.value)}
-                    className="w-full border rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#0F766E]"
-                    style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)", color: "var(--text-main)" }}
-                  >
-                    {initialBatches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.batch_name} ({b.batch_code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {batches.length > 0 && (
+                  <div>
+                    <label className="block font-semibold mb-1 opacity-80">Map to Scheme Batch</label>
+                    <select
+                      value={selectedBatchId}
+                      onChange={(e) => setSelectedBatchId(e.target.value)}
+                      className="w-full border rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#0F766E]"
+                      style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)", color: "var(--text-main)" }}
+                    >
+                      {batches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.batch_name} ({b.batch_code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -444,7 +473,7 @@ export default function GroupsPage() {
                     type="submit"
                     className="px-4 py-2 bg-[#0F766E] hover:bg-[#0d645e] text-white font-bold rounded-xl shadow-md cursor-pointer"
                   >
-                    Save Collection Group
+                    Save to Supabase DB
                   </button>
                 </div>
               </form>

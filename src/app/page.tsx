@@ -18,15 +18,7 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 export default function LandingPage() {
   return (
     <div className="min-h-screen font-sans transition-colors duration-300" style={{ backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}>
-      {/* Top Announcement Bar */}
-      <div className="border-b py-2 px-4 text-center text-xs font-medium flex items-center justify-center gap-2" style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--border-color)" }}>
-        <span className="inline-flex items-center gap-1 font-bold text-[#0F766E]">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Production-Ready v2.4</span>
-        </span>
-        <span className="opacity-40">•</span>
-        <span className="opacity-80">Atomic FIFO Allocation Engine for Tamil Nadu Seetu & Kandhu Operations</span>
-      </div>
+
 
       {/* Main Navigation */}
       <header className="border-b px-6 md:px-12 py-3.5 flex items-center justify-between sticky top-0 backdrop-blur-md z-40" style={{ borderColor: "var(--border-color)", backgroundColor: "var(--card-bg)" }}>

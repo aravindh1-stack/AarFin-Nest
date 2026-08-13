@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
-import { initialBatches, initialInstallments } from "@/lib/store";
+import { supabase } from "@/lib/supabase/client";
 import { Batch, Installment, SchemeType, FrequencyType } from "@/lib/types";
-import { Plus, Calendar, X, Sparkles, CheckCircle2, Edit3, Eye, Save } from "lucide-react";
+import { Plus, Calendar, X, Sparkles, CheckCircle2, Edit3, Eye, Save, Layers } from "lucide-react";
 
 export default function BatchesPage() {
-  const [batches, setBatches] = useState<Batch[]>(initialBatches);
-  const [installments, setInstallments] = useState<Installment[]>(initialInstallments);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Create Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -35,6 +35,22 @@ export default function BatchesPage() {
   const [editAmount, setEditAmount] = useState<number>(0);
   const [editRenewalDay, setEditRenewalDay] = useState("");
 
+  // Fetch Live Batches from Supabase DB
+  const fetchBatches = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('batches').select('*');
+    if (data && Array.isArray(data)) {
+      setBatches(data);
+    } else {
+      setBatches([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchBatches();
+  }, []);
+
   const openViewModal = (batch: Batch) => {
     setSelectedBatch(batch);
     setEditTitle(batch.batch_name);
@@ -44,31 +60,28 @@ export default function BatchesPage() {
     setIsEditMode(false);
   };
 
-  const handleSaveChanges = (e: React.FormEvent) => {
+  // Mutate Live Supabase `batches` Table
+  const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBatch) return;
 
-    const updatedBatches = batches.map((b) => {
-      if (b.id === selectedBatch.id) {
-        return {
-          ...b,
-          batch_name: editTitle,
-          batch_code: editCode.toUpperCase(),
-          installment_amount: editAmount,
-          renewal_day: editRenewalDay,
-        };
-      }
-      return b;
-    });
+    const updatedCode = editCode.toUpperCase();
 
-    setBatches(updatedBatches);
+    const { error } = await supabase.from('batches').update({
+      batch_name: editTitle,
+      batch_code: updatedCode,
+      installment_amount: editAmount,
+      renewal_day: editRenewalDay,
+    }).eq('id', selectedBatch.id);
+
+    await fetchBatches();
     setSelectedBatch(null);
-    setNotification(`Batch '${editCode.toUpperCase()}' updated successfully!`);
+    setNotification(`Batch '${updatedCode}' updated in Supabase database!`);
     setTimeout(() => setNotification(null), 5000);
   };
 
-  // Automated Batch & Cycle Generator
-  const handleCreateBatchAndCycles = (e: React.FormEvent) => {
+  // Create Batch & Write directly to Supabase DB
+  const handleCreateBatchAndCycles = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const start = new Date(startDate);
@@ -82,58 +95,26 @@ export default function BatchesPage() {
       end.setMonth(start.getMonth() + totalCycles);
     }
 
-    const newBatchId = `b${Date.now()}`;
     const formattedCode = batchCode.trim().toUpperCase() || `BATCH-${Math.floor(100 + Math.random() * 900)}`;
 
-    const newBatch: Batch = {
-      id: newBatchId,
+    const newBatchRecord = {
       batch_code: formattedCode,
       batch_name: batchTitle,
       scheme_type: schemeCategory,
       total_cycles: totalCycles,
       installment_amount: installmentAmount,
       frequency_type: frequencyType,
-      renewal_day: frequencyType !== "DAILY" ? renewalDay : undefined,
+      renewal_day: frequencyType !== "DAILY" ? renewalDay : null,
       start_date: startDate,
       end_date: end.toISOString().split("T")[0],
-      status: "ACTIVE",
-      group_count: 1,
-      customer_count: 0,
-      total_collected: 0,
-      target_amount: installmentAmount * totalCycles * 10,
-      created_at: new Date().toISOString()
+      status: "ACTIVE"
     };
 
-    const newCycles: Installment[] = [];
-    let cycleDate = new Date(startDate);
-
-    for (let i = 1; i <= totalCycles; i++) {
-      newCycles.push({
-        id: `inst-${newBatchId}-${i}`,
-        batch_id: newBatchId,
-        installment_number: i,
-        due_date: cycleDate.toISOString().split("T")[0],
-        amount: installmentAmount,
-        paid_amount: 0,
-        balance_amount: installmentAmount,
-        status: "UPCOMING",
-        batch_name: batchTitle,
-      });
-
-      if (frequencyType === "DAILY") {
-        cycleDate.setDate(cycleDate.getDate() + 1);
-      } else if (frequencyType === "WEEKLY") {
-        cycleDate.setDate(cycleDate.getDate() + 7);
-      } else if (frequencyType === "MONTHLY") {
-        cycleDate.setMonth(cycleDate.getMonth() + 1);
-      }
-    }
-
-    setBatches([newBatch, ...batches]);
-    setInstallments([...newCycles, ...installments]);
+    await supabase.from('batches').insert([newBatchRecord]);
+    await fetchBatches();
 
     setIsCreateModalOpen(false);
-    setNotification(`Batch '${formattedCode}' initialized! ${totalCycles} cycles created.`);
+    setNotification(`Batch '${formattedCode}' created in Live Supabase DB!`);
     setTimeout(() => setNotification(null), 5000);
 
     setBatchTitle("");
@@ -143,7 +124,7 @@ export default function BatchesPage() {
   return (
     <div className="min-h-screen transition-colors duration-300 font-sans" style={{ backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}>
       <Sidebar />
-      <Header title="Scheme & Batch Management" subtitle="Create, View, and Edit Palagara Seetu, Vaara Kandhu & Dhina Kandhu Batches" />
+      <Header title="Scheme & Batch Management" subtitle="100% Live Supabase PostgreSQL Integration for Palagara Seetu, Vaara Kandhu & Dhina Kandhu" />
 
       <main className="ml-64 p-6 space-y-6">
         {notification && (
@@ -152,7 +133,7 @@ export default function BatchesPage() {
               <CheckCircle2 className="w-5 h-5 text-emerald-500" />
               <span className="text-xs font-semibold">{notification}</span>
             </div>
-            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-mono text-emerald-500">BATCH_UPDATED</span>
+            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-mono text-emerald-500">SUPABASE_MUTATED</span>
           </div>
         )}
 
@@ -160,7 +141,7 @@ export default function BatchesPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold tracking-tight">Active Scheme Batches</h2>
-            <p className="text-xs opacity-70">Click any batch card to view details or edit parameters</p>
+            <p className="text-xs opacity-70">Direct real-time query against public.batches table</p>
           </div>
 
           <button
@@ -172,54 +153,70 @@ export default function BatchesPage() {
           </button>
         </div>
 
-        {/* Batches Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {batches.map((batch) => (
-            <div
-              key={batch.id}
-              onClick={() => openViewModal(batch)}
-              className="p-6 rounded-2xl border glass-panel transition-all flex flex-col justify-between cursor-pointer hover:border-[#0F766E] shadow-sm hover:shadow-md"
+        {/* Live Batches Grid or Clean Empty State */}
+        {loading ? (
+          <div className="p-12 text-center text-xs opacity-70 font-mono">Loading batches from Supabase PostgreSQL...</div>
+        ) : batches.length === 0 ? (
+          <div className="p-12 rounded-2xl border text-center space-y-3 glass-panel" style={{ borderColor: "var(--border-color)" }}>
+            <Layers className="w-10 h-10 opacity-40 mx-auto text-[#0F766E]" />
+            <h3 className="text-base font-bold">No Scheme Batches Found</h3>
+            <p className="text-xs opacity-70 max-w-sm mx-auto">No batches are currently registered in the database. Click 'Create New Scheme Batch' to add your first batch.</p>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-[#0F766E] text-white text-xs font-bold px-4 py-2 rounded-xl"
             >
-              <div>
-                <div className="flex justify-between items-start mb-3">
-                  <div className="space-y-1">
-                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#0F766E]/20 text-[#10B981] border border-[#0F766E]/30 uppercase tracking-wider font-mono">
-                      {batch.scheme_type.replace("_", " ")}
+              Create Batch
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {batches.map((batch) => (
+              <div
+                key={batch.id}
+                onClick={() => openViewModal(batch)}
+                className="p-6 rounded-2xl border glass-panel transition-all flex flex-col justify-between cursor-pointer hover:border-[#0F766E] shadow-sm hover:shadow-md"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="space-y-1">
+                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#0F766E]/20 text-[#10B981] border border-[#0F766E]/30 uppercase tracking-wider font-mono">
+                        {batch.scheme_type.replace("_", " ")}
+                      </span>
+                      <p className="text-[10px] font-mono text-emerald-500 font-bold">{batch.batch_code}</p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
+                      {batch.status}
                     </span>
-                    <p className="text-[10px] font-mono text-emerald-500 font-bold">{batch.batch_code}</p>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
-                    {batch.status}
+
+                  <h3 className="text-lg font-bold mb-1">{batch.batch_name}</h3>
+                  <p className="text-xs opacity-75 flex items-center gap-1.5 mb-4">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>{batch.start_date} to {batch.end_date} ({batch.frequency_type})</span>
+                  </p>
+
+                  <div className="rounded-xl p-4 border space-y-2 mb-4" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
+                    <div className="flex justify-between text-xs">
+                      <span className="opacity-75">Installment per cycle:</span>
+                      <span className="font-bold">₹{batch.installment_amount.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="opacity-75">Total Cycles:</span>
+                      <span className="font-bold">{batch.total_cycles} Cycles</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t text-xs font-medium" style={{ borderColor: "var(--border-color)" }}>
+                  <span className="text-emerald-500 font-bold flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5" /> Click to View / Edit
                   </span>
-                </div>
-
-                <h3 className="text-lg font-bold mb-1">{batch.batch_name}</h3>
-                <p className="text-xs opacity-75 flex items-center gap-1.5 mb-4">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>{batch.start_date} to {batch.end_date} ({batch.frequency_type})</span>
-                </p>
-
-                <div className="rounded-xl p-4 border space-y-2 mb-4" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
-                  <div className="flex justify-between text-xs">
-                    <span className="opacity-75">Installment per cycle:</span>
-                    <span className="font-bold">₹{batch.installment_amount.toLocaleString("en-IN")}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="opacity-75">Total Cycles:</span>
-                    <span className="font-bold">{batch.total_cycles} Cycles</span>
-                  </div>
+                  <span className="opacity-60">{batch.group_count || 1} Group(s)</span>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between pt-2 border-t text-xs font-medium" style={{ borderColor: "var(--border-color)" }}>
-                <span className="text-emerald-500 font-bold flex items-center gap-1">
-                  <Eye className="w-3.5 h-3.5" /> Click to View / Edit
-                </span>
-                <span className="opacity-60">{batch.group_count || 1} Group(s)</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* View & Edit Details Modal */}
         {selectedBatch && (
@@ -360,7 +357,7 @@ export default function BatchesPage() {
                       className="px-4 py-2 bg-[#0F766E] hover:bg-[#0d645e] text-white font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
                     >
                       <Save className="w-3.5 h-3.5" />
-                      <span>Save Changes</span>
+                      <span>Save to Supabase DB</span>
                     </button>
                   </div>
                 </form>
@@ -379,7 +376,7 @@ export default function BatchesPage() {
               <div className="flex justify-between items-center border-b pb-3" style={{ borderColor: "var(--border-color)" }}>
                 <div>
                   <h3 className="text-base font-bold">Create New Scheme Batch</h3>
-                  <p className="text-xs opacity-70">Initializes configuration & pre-calculates cycle rows</p>
+                  <p className="text-xs opacity-70">Direct insertion into public.batches table</p>
                 </div>
                 <button onClick={() => setIsCreateModalOpen(false)} className="opacity-70 hover:opacity-100 cursor-pointer">
                   <X className="w-5 h-5" />
@@ -497,7 +494,7 @@ export default function BatchesPage() {
                     className="px-4 py-2 bg-[#0F766E] hover:bg-[#0d645e] text-white font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>Save & Initialize Cycles</span>
+                    <span>Save to Supabase</span>
                   </button>
                 </div>
               </form>

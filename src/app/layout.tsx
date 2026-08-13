@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import PageLoadingOverlay from "@/components/layout/PageLoadingOverlay";
+import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,6 +23,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen">
         <ThemeProvider>
+          <Suspense fallback={null}>
+            <PageLoadingOverlay />
+          </Suspense>
           {children}
         </ThemeProvider>
       </body>

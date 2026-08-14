@@ -5,7 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { supabase } from "@/lib/supabase/client";
 import { Group, Batch } from "@/lib/types";
-import { Plus, MapPin, X, CheckCircle2, Eye, Edit3, Save, Layers } from "lucide-react";
+import { Plus, MapPin, X, CheckCircle2, Eye, Edit3, Save } from "lucide-react";
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -39,16 +39,23 @@ export default function GroupsPage() {
     const { data: groupData } = await supabase.from('groups').select('*');
     const { data: batchData } = await supabase.from('batches').select('*');
     
-    if (groupData && Array.isArray(groupData)) setGroups(groupData);
-    else setGroups([]);
-
+    const batchMap = new Map();
     if (batchData && Array.isArray(batchData)) {
+      batchData.forEach(b => batchMap.set(b.id, b.batch_name));
       setBatches(batchData);
       if (batchData.length > 0 && !selectedBatchId) {
         setSelectedBatchId(batchData[0].id);
       }
+    }
+
+    if (groupData && Array.isArray(groupData)) {
+      const enrichedGroups = groupData.map(g => ({
+        ...g,
+        batch_name: batchMap.get(g.batch_id) || "Scheme Batch"
+      }));
+      setGroups(enrichedGroups);
     } else {
-      setBatches([]);
+      setGroups([]);
     }
     
     setLoading(false);
@@ -61,7 +68,7 @@ export default function GroupsPage() {
   const openViewModal = (group: Group) => {
     setSelectedGroup(group);
     setEditName(group.group_name);
-    setEditCode(group.group_code);
+    setEditCode(group.group_code || "");
     setEditRoute(group.route_name);
     setEditAgent(group.collection_agent || "");
     setEditOrder(group.display_order || 1);
@@ -84,7 +91,7 @@ export default function GroupsPage() {
 
     await fetchGroupsAndBatches();
     setSelectedGroup(null);
-    setNotification(`Collection Group '${updatedCode}' updated in Live Supabase DB!`);
+    setNotification(`Collection Group '${updatedCode}' updated successfully!`);
     setTimeout(() => setNotification(null), 5000);
   };
 
@@ -92,9 +99,26 @@ export default function GroupsPage() {
     e.preventDefault();
 
     const newGroupCode = groupCode.trim().toUpperCase() || `GRP-ROUTE-${Math.floor(10 + Math.random() * 90)}`;
+    const matchedBatch = batches.find(b => b.id === selectedBatchId);
+
+    const newGroupObject: Group = {
+      id: `g_${Date.now()}`,
+      batch_id: selectedBatchId || (batches[0]?.id || ""),
+      group_name: groupName,
+      group_code: newGroupCode,
+      route_name: routeName,
+      display_order: displayOrder,
+      collection_agent: collectionAgent || "Unassigned Agent",
+      customer_count: 0,
+      batch_name: matchedBatch?.batch_name || "Scheme Batch",
+      created_at: new Date().toISOString()
+    };
+
+    // Instant local state update so new group appears immediately
+    setGroups(prev => [newGroupObject, ...prev]);
 
     const newGroupRecord = {
-      batch_id: selectedBatchId,
+      batch_id: selectedBatchId || null,
       group_name: groupName,
       group_code: newGroupCode,
       route_name: routeName,
@@ -106,7 +130,7 @@ export default function GroupsPage() {
     await fetchGroupsAndBatches();
 
     setIsCreateModalOpen(false);
-    setNotification(`Collection Group '${newGroupCode}' created in Supabase DB!`);
+    setNotification(`Collection Group '${newGroupCode}' created successfully!`);
     setTimeout(() => setNotification(null), 5000);
 
     setGroupName("");
@@ -127,7 +151,7 @@ export default function GroupsPage() {
               <CheckCircle2 className="w-5 h-5 text-emerald-500" />
               <span className="text-xs font-semibold">{notification}</span>
             </div>
-            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-mono text-emerald-500">DB_UPDATE_SUCCESS</span>
+            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-mono text-emerald-500">SUCCESS</span>
           </div>
         )}
 
@@ -148,7 +172,7 @@ export default function GroupsPage() {
         </div>
 
         {/* Groups Cards Grid or Clean Empty State */}
-        {loading ? (
+        {loading && groups.length === 0 ? (
           <div className="p-12 text-center text-xs opacity-70 font-mono">Loading route groups from Supabase...</div>
         ) : groups.length === 0 ? (
           <div className="p-12 rounded-2xl border text-center space-y-3 glass-panel" style={{ borderColor: "var(--border-color)" }}>
@@ -173,7 +197,7 @@ export default function GroupsPage() {
                 <div>
                   <div className="flex justify-between items-start mb-3">
                     <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#0F766E]/20 text-[#10B981] border border-[#0F766E]/30 uppercase tracking-wider font-mono">
-                      {group.group_code}
+                      {group.group_code || 'GRP-ROUTE'}
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border" style={{ backgroundColor: "var(--input-bg)", borderColor: "var(--border-color)" }}>
                       Order #{group.display_order || 1}
@@ -218,7 +242,7 @@ export default function GroupsPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-bold">{selectedGroup.group_name}</h3>
                     <span className="text-[10px] font-mono font-bold text-emerald-500 bg-[#0F766E]/20 px-2 py-0.5 rounded border border-[#0F766E]/30">
-                      {selectedGroup.group_code}
+                      {selectedGroup.group_code || 'GRP-ROUTE'}
                     </span>
                   </div>
                 </div>
@@ -237,7 +261,7 @@ export default function GroupsPage() {
                     </div>
                     <div>
                       <p className="opacity-60">Group Code</p>
-                      <p className="font-mono font-bold text-emerald-500">{selectedGroup.group_code}</p>
+                      <p className="font-mono font-bold text-emerald-500">{selectedGroup.group_code || 'GRP-ROUTE'}</p>
                     </div>
                     <div>
                       <p className="opacity-60">Geographical Route</p>
@@ -348,7 +372,7 @@ export default function GroupsPage() {
                       className="px-4 py-2 bg-[#0F766E] hover:bg-[#0d645e] text-white font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
                     >
                       <Save className="w-3.5 h-3.5" />
-                      <span>Save to Supabase</span>
+                      <span>Save Changes</span>
                     </button>
                   </div>
                 </form>
@@ -367,7 +391,7 @@ export default function GroupsPage() {
               <div className="flex justify-between items-center border-b pb-3" style={{ borderColor: "var(--border-color)" }}>
                 <div>
                   <h3 className="text-base font-bold">Create Collection Route Group</h3>
-                  <p className="text-xs opacity-70">Direct insertion into public.groups table</p>
+                  <p className="text-xs opacity-70">Partition customers into specific agent route groups</p>
                 </div>
                 <button onClick={() => setIsCreateModalOpen(false)} className="opacity-70 hover:opacity-100 cursor-pointer">
                   <X className="w-5 h-5" />
@@ -386,7 +410,7 @@ export default function GroupsPage() {
                     >
                       {batches.map((b) => (
                         <option key={b.id} value={b.id}>
-                          {b.batch_name} ({b.batch_code})
+                          {b.batch_name} ({b.batch_code || 'BATCH'})
                         </option>
                       ))}
                     </select>
@@ -473,7 +497,7 @@ export default function GroupsPage() {
                     type="submit"
                     className="px-4 py-2 bg-[#0F766E] hover:bg-[#0d645e] text-white font-bold rounded-xl shadow-md cursor-pointer"
                   >
-                    Save to Supabase DB
+                    Save Group
                   </button>
                 </div>
               </form>

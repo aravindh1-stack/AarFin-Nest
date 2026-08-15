@@ -49,6 +49,13 @@
 - [x] Add Timeline Preset Filters (Daily Wise, Weekly Wise, Monthly Wise, Selective Custom Date Range).
 - [x] Implement vector browser PDF export engine (`/reports`).
 
+### Module 3.5: Decoupled Backend Architecture & API Layer
+- [x] Create server-side REST helper client in `src/backend/config/supabaseAdmin.ts`.
+- [x] Create isolated service layer (`src/backend/services/dbService.ts`) for customers, batches, groups, payments, and audit logs.
+- [x] Build API Route Controllers (`/api/customers`, `/api/batches`, `/api/groups`, `/api/payments`, `/api/audit`).
+- [x] Remove 100% of direct database calls from frontend React components.
+- [x] Secure API secrets exclusively within `.env.local`.
+
 ---
 
 ## 4. Verification & Testing Checklist

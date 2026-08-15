@@ -1,27 +1,32 @@
 # Technical Requirement Document (TRD) — AarFin Nest
 
 ## 1. System Architecture Overview
-AarFin Nest is built as a full-stack Web Application utilizing a modern Next.js App Router architecture connected to a Supabase PostgreSQL backend database.
+AarFin Nest is built as a full-stack Web Application utilizing a modern Next.js App Router architecture connected to an isolated backend service layer and Supabase PostgreSQL database.
 
 ```
-[ Next.js Client App (React 19 / TailwindCSS v4) ]
+[ FRONTEND UI (React 19 Client Components) ]
                    │
-                   ▼ (HTTPS REST / PostgREST)
-[ Supabase Supa-Client with Service Role Bypass ]
+                   ▼ (HTTP REST APIs - /api/*)
+[ NEXT.JS API ROUTE CONTROLLERS (src/app/api/) ]
                    │
-                   ▼ (SQL Execution & Relational Schema)
-[ Supabase PostgreSQL Engine (public schema) ]
+                   ▼
+[ DECOUPLED BACKEND SERVICES (src/backend/services/dbService.ts) ]
+                   │
+                   ▼ (Server-Side Admin REST Client - src/backend/config/supabaseAdmin.ts)
+[ Supabase PostgreSQL Database (public schema) ]
 ```
 
 ---
 
 ## 2. Technology Stack & Dependencies
 - **Frontend Framework**: Next.js 15 / 16 (App Router with Client Components).
+- **Backend Architecture**: Decoupled API Route Controllers (`/api/customers`, `/api/batches`, `/api/groups`, `/api/payments`, `/api/audit`) & Isolated Service Layer (`src/backend/services/dbService.ts`).
+- **Security & Config**: Centralized `.env.local` store, Server-Side `SUPABASE_SERVICE_ROLE_KEY` authorization.
 - **Language**: TypeScript 5.7.
 - **Styling & UI**: Vanilla CSS Design Tokens, TailwindCSS v4, Lucide React Icons.
-- **Backend & Database**: Supabase (`@supabase/supabase-js`), PostgREST, PostgreSQL.
+- **Backend & Database**: Native Server-Side Fetch Client against Supabase PostgREST Engine.
 - **State Management**: React `useState`, `useMemo`, `useEffect`, Optimistic UI Updates.
-- **Reporting Engine**: HTML5 Media Print Styles & Vector Browser PDF Engine.
+- **Reporting Engine**: HTML5 Media Print Styles & Vector Browser PDF Engine (`window.print()`).
 
 ---
 

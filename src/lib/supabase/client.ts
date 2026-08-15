@@ -19,8 +19,8 @@ export function setLocalDB<T>(key: string, data: T[]): void {
   }
 }
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ivklipmqwrzzgeabmndd.supabase.co';
-const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2a2xpcG1xd3J6emdlYWJtbmRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTkyMTc2MSwiZXhwIjoyMTAxNDk3NzYxfQ.zFQvpaMjZWMKdazYgKCpIFkx534hRfSS06sTNpJ3dMc";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SERVICE_ROLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export const supabase = {
   from(table: string) {

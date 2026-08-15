@@ -24,11 +24,17 @@ export default function Dashboard() {
 
   const fetchDashboardMetrics = async () => {
     setLoading(true);
-    const { data: bData } = await supabase.from('batches').select('*');
-    const { data: cData } = await supabase.from('customers').select('*');
+    try {
+      const [bData, cData] = await Promise.all([
+        fetch('/api/batches').then(r => r.json()),
+        fetch('/api/customers').then(r => r.json())
+      ]);
 
-    if (bData && Array.isArray(bData)) setBatchesCount(bData.length);
-    if (cData && Array.isArray(cData)) setCustomersCount(cData.length);
+      if (Array.isArray(bData)) setBatchesCount(bData.length);
+      if (Array.isArray(cData)) setCustomersCount(cData.length);
+    } catch (err) {
+      console.error("Backend fetch error in dashboard page:", err);
+    }
 
     setLoading(false);
   };

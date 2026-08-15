@@ -36,28 +36,33 @@ export default function GroupsPage() {
 
   const fetchGroupsAndBatches = async () => {
     setLoading(true);
-    const { data: groupData } = await supabase.from('groups').select('*');
-    const { data: batchData } = await supabase.from('batches').select('*');
-    
-    const batchMap = new Map();
-    if (batchData && Array.isArray(batchData)) {
-      batchData.forEach(b => batchMap.set(b.id, b.batch_name));
-      setBatches(batchData);
-      if (batchData.length > 0 && !selectedBatchId) {
-        setSelectedBatchId(batchData[0].id);
-      }
-    }
+    try {
+      const [groupRes, batchRes] = await Promise.all([
+        fetch('/api/groups').then(r => r.json()),
+        fetch('/api/batches').then(r => r.json())
+      ]);
 
-    if (groupData && Array.isArray(groupData)) {
-      const enrichedGroups = groupData.map(g => ({
-        ...g,
-        batch_name: batchMap.get(g.batch_id) || "Scheme Batch"
-      }));
-      setGroups(enrichedGroups);
-    } else {
-      setGroups([]);
+      const batchMap = new Map();
+      if (Array.isArray(batchRes)) {
+        batchRes.forEach(b => batchMap.set(b.id, b.batch_name));
+        setBatches(batchRes);
+        if (batchRes.length > 0 && !selectedBatchId) {
+          setSelectedBatchId(batchRes[0].id);
+        }
+      }
+
+      if (Array.isArray(groupRes)) {
+        const enrichedGroups = groupRes.map(g => ({
+          ...g,
+          batch_name: g.batch_name || batchMap.get(g.batch_id) || "Scheme Batch"
+        }));
+        setGroups(enrichedGroups);
+      } else {
+        setGroups([]);
+      }
+    } catch (err) {
+      console.error("Backend fetch error in groups:", err);
     }
-    
     setLoading(false);
   };
 
@@ -81,13 +86,22 @@ export default function GroupsPage() {
 
     const updatedCode = editCode.toUpperCase();
 
-    await supabase.from('groups').update({
-      group_name: editName,
-      group_code: updatedCode,
-      route_name: editRoute,
-      collection_agent: editAgent,
-      display_order: editOrder,
-    }).eq('id', selectedGroup.id);
+    try {
+      await fetch('/api/groups', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedGroup.id,
+          group_name: editName,
+          group_code: updatedCode,
+          route_name: editRoute,
+          collection_agent: editAgent,
+          display_order: editOrder
+        })
+      });
+    } catch (err) {
+      console.error("Backend API group update error:", err);
+    }
 
     await fetchGroupsAndBatches();
     setSelectedGroup(null);
@@ -126,7 +140,16 @@ export default function GroupsPage() {
       collection_agent: collectionAgent || "Unassigned Agent"
     };
 
-    await supabase.from('groups').insert([newGroupRecord]);
+    try {
+      await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newGroupRecord)
+      });
+    } catch (err) {
+      console.error("Backend API group insert error:", err);
+    }
+
     await fetchGroupsAndBatches();
 
     setIsCreateModalOpen(false);

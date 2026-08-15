@@ -45,34 +45,34 @@ export default function CustomersPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: custData } = await supabase.from('customers').select('*');
-    const { data: batchData } = await supabase.from('batches').select('*');
-    const { data: groupData } = await supabase.from('groups').select('*');
-    const { data: payData } = await supabase.from('payments').select('*');
+    try {
+      const [custRes, batchRes, groupRes, payRes] = await Promise.all([
+        fetch('/api/customers').then(r => r.json()),
+        fetch('/api/batches').then(r => r.json()),
+        fetch('/api/groups').then(r => r.json()),
+        fetch('/api/payments').then(r => r.json())
+      ]);
 
-    if (batchData && Array.isArray(batchData)) {
-      setBatches(batchData);
-      if (batchData.length > 0 && !selectedBatchId) {
-        setSelectedBatchId(batchData[0].id);
+      if (Array.isArray(batchRes)) {
+        setBatches(batchRes);
+        if (batchRes.length > 0 && !selectedBatchId) {
+          setSelectedBatchId(batchRes[0].id);
+        }
       }
-    }
 
-    if (groupData && Array.isArray(groupData)) {
-      setGroups(groupData);
-      const batchGroups = groupData.filter(g => g.batch_id === (batchData?.[0]?.id || ""));
-      if (batchGroups.length > 0) {
-        setSelectedGroupId(batchGroups[0].id);
+      if (Array.isArray(groupRes)) {
+        setGroups(groupRes);
+        const batchGroups = groupRes.filter(g => g.batch_id === (batchRes?.[0]?.id || ""));
+        if (batchGroups.length > 0) {
+          setSelectedGroupId(batchGroups[0].id);
+        }
       }
-    }
 
-    if (payData && Array.isArray(payData)) {
-      setPayments(payData);
-    }
-
-    if (custData && Array.isArray(custData)) {
-      setCustomers(custData);
-    } else {
-      setCustomers([]);
+      if (Array.isArray(payRes)) setPayments(payRes);
+      if (Array.isArray(custRes)) setCustomers(custRes);
+      else setCustomers([]);
+    } catch (err) {
+      console.error("Backend fetch error in customers page:", err);
     }
 
     setLoading(false);
@@ -96,20 +96,21 @@ export default function CustomersPage() {
     if (!selectedCustomer) return;
 
     // Optimistic UI state update
-    setCustomers(prev => prev.map(c => c.id === selectedCustomer.id ? {
-      ...c,
-      full_name: editName,
-      phone_number: editPhone,
-      address: editAddress,
-      internal_notes: editNotes
-    } : c));
-
-    await supabase.from('customers').update({
-      full_name: editName,
-      phone_number: editPhone,
-      address: editAddress,
-      internal_notes: editNotes
-    }).eq('id', selectedCustomer.id);
+    try {
+      await fetch('/api/customers', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedCustomer.id,
+          full_name: editName,
+          phone_number: editPhone,
+          address: editAddress,
+          internal_notes: editNotes
+        })
+      });
+    } catch (err) {
+      console.error("Backend API customer update error:", err);
+    }
 
     await fetchData();
     setSelectedCustomer(null);
@@ -262,7 +263,16 @@ export default function CustomersPage() {
       status: "ACTIVE"
     };
 
-    await supabase.from('customers').insert([newCustRecord]);
+    try {
+      await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCustRecord)
+      });
+    } catch (err) {
+      console.error("Backend API customer insert error:", err);
+    }
+
     await fetchData();
 
     setIsModalOpen(false);

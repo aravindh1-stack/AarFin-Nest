@@ -42,21 +42,27 @@ export default function ReportsPage() {
   useEffect(() => {
     const fetchReportsData = async () => {
       setLoading(true);
-      const { data: custData } = await supabase.from('customers').select('*');
-      const { data: batchData } = await supabase.from('batches').select('*');
-      const { data: groupData } = await supabase.from('groups').select('*');
-      const { data: payData } = await supabase.from('payments').select('*');
+      try {
+        const [custRes, batchRes, groupRes, payRes] = await Promise.all([
+          fetch('/api/customers').then(r => r.json()),
+          fetch('/api/batches').then(r => r.json()),
+          fetch('/api/groups').then(r => r.json()),
+          fetch('/api/payments').then(r => r.json())
+        ]);
 
-      if (custData && Array.isArray(custData)) setCustomers(custData);
-      if (batchData && Array.isArray(batchData)) {
-        setBatches(batchData);
-        if (batchData.length > 0) setSelectedBatchId(batchData[0].id);
+        if (Array.isArray(custRes)) setCustomers(custRes);
+        if (Array.isArray(batchRes)) {
+          setBatches(batchRes);
+          if (batchRes.length > 0) setSelectedBatchId(batchRes[0].id);
+        }
+        if (Array.isArray(groupRes)) {
+          setGroups(groupRes);
+          if (groupRes.length > 0) setSelectedGroupId(groupRes[0].id);
+        }
+        if (Array.isArray(payRes)) setPayments(payRes);
+      } catch (err) {
+        console.error("Backend fetch error in reports page:", err);
       }
-      if (groupData && Array.isArray(groupData)) {
-        setGroups(groupData);
-        if (groupData.length > 0) setSelectedGroupId(groupData[0].id);
-      }
-      if (payData && Array.isArray(payData)) setPayments(payData);
 
       setLoading(false);
     };

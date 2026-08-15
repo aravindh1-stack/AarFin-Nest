@@ -49,19 +49,21 @@ export default function CollectionsPage() {
 
   const fetchCollectionsData = async () => {
     setLoading(true);
-    const { data: custData } = await supabase.from('customers').select('*');
-    const { data: batchData } = await supabase.from('batches').select('*');
-    const { data: groupData } = await supabase.from('groups').select('*');
-    const { data: instData } = await supabase.from('installments').select('*');
-    const { data: payData } = await supabase.from('payments').select('*');
+    try {
+      const [custRes, batchRes, groupRes, payRes] = await Promise.all([
+        fetch('/api/customers').then(r => r.json()),
+        fetch('/api/batches').then(r => r.json()),
+        fetch('/api/groups').then(r => r.json()),
+        fetch('/api/payments').then(r => r.json())
+      ]);
 
-    if (custData && Array.isArray(custData)) setCustomers(custData);
-    else setCustomers([]);
-
-    if (batchData && Array.isArray(batchData)) setBatches(batchData);
-    if (groupData && Array.isArray(groupData)) setGroups(groupData);
-    if (instData && Array.isArray(instData)) setInstallments(instData);
-    if (payData && Array.isArray(payData)) setPayments(payData);
+      if (Array.isArray(custRes)) setCustomers(custRes);
+      if (Array.isArray(batchRes)) setBatches(batchRes);
+      if (Array.isArray(groupRes)) setGroups(groupRes);
+      if (Array.isArray(payRes)) setPayments(payRes);
+    } catch (err) {
+      console.error("Backend fetch error:", err);
+    }
 
     setLoading(false);
   };
@@ -227,21 +229,27 @@ export default function CollectionsPage() {
     const cycleMeta = targetCycleNumber === "AUTO" ? "Auto FIFO" : `Cycle #${targetCycleNumber}`;
     const categoryMeta = paymentTypeCategory === "FULL" ? "Full Payment" : paymentTypeCategory === "PARTIAL" ? "Partial Payment" : paymentTypeCategory === "OVERDUE_CLEARANCE" ? "Overdue Clearance" : "Advance Payment";
 
-    // 1. Insert into public.payments matching schema constraints
-    const { error: payErr } = await supabase.from('payments').insert([
-      {
-        customer_id: selectedMember.id,
-        batch_id: selectedMember.batch_id || batches[0]?.id || null,
-        amount_paid: Number(paymentAmount),
-        payment_method: paymentMethod,
-        reference_no: referenceNo || null,
-        receipt_no: receiptNo,
-        notes: `[${cycleMeta} - ${categoryMeta}] ${notes || "Field Collection Entry"}`
-      }
-    ]);
+    // 1. Post payment record via Backend API route (/api/payments)
+    try {
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_id: selectedMember.id,
+          batch_id: selectedMember.batch_id || batches[0]?.id || null,
+          amount_paid: Number(paymentAmount),
+          payment_method: paymentMethod,
+          reference_no: referenceNo || null,
+          receipt_no: receiptNo,
+          notes: `[${cycleMeta} - ${categoryMeta}] ${notes || "Field Collection Entry"}`
+        })
+      });
 
-    if (payErr) {
-      console.error("Payment insert error:", payErr);
+      if (!res.ok) {
+        console.error("Backend API payment insert error");
+      }
+    } catch (err) {
+      console.error("Payment post error:", err);
     }
 
     await fetchCollectionsData();
@@ -281,14 +289,22 @@ export default function CollectionsPage() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-rose-400">Overdue Pending Members</p>
               <p className="text-2xl font-black text-rose-400">
                 {customers.filter(c => {
+                  const cStartStr = c.joining_date || c.created_at?.split("T")[0] || "2026-08-01";
+                  const cStartObj = new Date(cStartStr);
+                  cStartObj.setHours(0, 0, 0, 0);
+
+                  const todayObj = new Date();
+                  todayObj.setHours(0, 0, 0, 0);
+
+                  if (cStartObj > todayObj) return false; // Future schedule is NOT overdue
+
                   const p = payments.filter(pay => pay.customer_id === c.id);
                   const totalPaid = p.reduce((acc, curr) => acc + (Number(curr.amount_paid) || 0), 0);
                   const b = batches.find(b => b.id === c.batch_id || b.batch_name === c.batch_name) || batches[0];
                   const instAmt = Number(b?.installment_amount) || 5000;
                   const paidCount = Math.floor(totalPaid / instAmt);
                   
-                  const cStart = new Date(c.joining_date || c.created_at?.split("T")[0] || "2026-08-01");
-                  const diffDays = Math.max(0, Math.floor((new Date().getTime() - cStart.getTime()) / (1000 * 60 * 60 * 24)));
+                  const diffDays = Math.max(0, Math.floor((todayObj.getTime() - cStartObj.getTime()) / (1000 * 60 * 60 * 24)));
                   const curCycle = Math.max(1, Math.floor(diffDays / (b?.frequency_type === 'DAILY' ? 1 : b?.frequency_type === 'WEEKLY' ? 7 : 30)) + 1);
                   
                   return paidCount < curCycle;
@@ -301,14 +317,22 @@ export default function CollectionsPage() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Up To Date Members</p>
               <p className="text-2xl font-black text-emerald-400">
                 {customers.filter(c => {
+                  const cStartStr = c.joining_date || c.created_at?.split("T")[0] || "2026-08-01";
+                  const cStartObj = new Date(cStartStr);
+                  cStartObj.setHours(0, 0, 0, 0);
+
+                  const todayObj = new Date();
+                  todayObj.setHours(0, 0, 0, 0);
+
+                  if (cStartObj > todayObj) return true; // Future schedule is up to date / no active dues
+
                   const p = payments.filter(pay => pay.customer_id === c.id);
                   const totalPaid = p.reduce((acc, curr) => acc + (Number(curr.amount_paid) || 0), 0);
                   const b = batches.find(b => b.id === c.batch_id || b.batch_name === c.batch_name) || batches[0];
                   const instAmt = Number(b?.installment_amount) || 5000;
                   const paidCount = Math.floor(totalPaid / instAmt);
                   
-                  const cStart = new Date(c.joining_date || c.created_at?.split("T")[0] || "2026-08-01");
-                  const diffDays = Math.max(0, Math.floor((new Date().getTime() - cStart.getTime()) / (1000 * 60 * 60 * 24)));
+                  const diffDays = Math.max(0, Math.floor((todayObj.getTime() - cStartObj.getTime()) / (1000 * 60 * 60 * 24)));
                   const curCycle = Math.max(1, Math.floor(diffDays / (b?.frequency_type === 'DAILY' ? 1 : b?.frequency_type === 'WEEKLY' ? 7 : 30)) + 1);
                   
                   return paidCount >= curCycle;
@@ -383,12 +407,20 @@ export default function CollectionsPage() {
               const instAmt = Number(batch?.installment_amount) || 5000;
               const paidCount = Math.floor(totalPaid / instAmt);
 
-              const cStart = new Date(cust.joining_date || cust.created_at?.split("T")[0] || "2026-08-01");
-              const diffDays = Math.max(0, Math.floor((new Date().getTime() - cStart.getTime()) / (1000 * 60 * 60 * 24)));
-              const intervalDays = batch?.frequency_type === 'DAILY' ? 1 : batch?.frequency_type === 'WEEKLY' ? 7 : 30;
-              const curCycle = Math.max(1, Math.floor(diffDays / intervalDays) + 1);
+              const cStartStr = cust.joining_date || cust.created_at?.split("T")[0] || "2026-08-01";
+              const cStartObj = new Date(cStartStr);
+              cStartObj.setHours(0, 0, 0, 0);
 
-              const isPaidUpToDate = paidCount >= curCycle;
+              const todayObj = new Date();
+              todayObj.setHours(0, 0, 0, 0);
+
+              const isFuture = cStartObj > todayObj;
+
+              const diffDays = Math.max(0, Math.floor((todayObj.getTime() - cStartObj.getTime()) / (1000 * 60 * 60 * 24)));
+              const intervalDays = batch?.frequency_type === 'DAILY' ? 1 : batch?.frequency_type === 'WEEKLY' ? 7 : 30;
+              const curCycle = isFuture ? 0 : Math.max(1, Math.floor(diffDays / intervalDays) + 1);
+
+              const isPaidUpToDate = isFuture || paidCount >= curCycle;
 
               return (
                 <div
@@ -403,12 +435,14 @@ export default function CollectionsPage() {
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          isPaidUpToDate
+                          isFuture
+                            ? "bg-slate-500/20 text-slate-300 border border-slate-500/30"
+                            : isPaidUpToDate
                             ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                             : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                         }`}
                       >
-                        {isPaidUpToDate ? "UP TO DATE" : `OVERDUE (Cycle #${curCycle})`}
+                        {isFuture ? "SCHEDULE UPCOMING" : isPaidUpToDate ? "UP TO DATE" : `OVERDUE (Cycle #${curCycle})`}
                       </span>
                     </div>
 
@@ -554,7 +588,7 @@ export default function CollectionsPage() {
                         {Array.from({ length: selectedMemberLedger.totalCycles }).map((_, idx) => {
                           const cycleNum = idx + 1;
                           const isPaid = cycleNum <= selectedMemberLedger.maxPaidCycleNumber;
-                          const isCurrent = cycleNum === selectedMemberLedger.individualCurrentCycle;
+                          const isCurrent = !selectedMemberLedger.isFutureStart && cycleNum === selectedMemberLedger.individualCurrentCycle;
 
                           let statusLabel = "UPCOMING";
                           let badgeStyle = "bg-slate-500/20 text-slate-400";
@@ -562,6 +596,9 @@ export default function CollectionsPage() {
                           if (isPaid) {
                             statusLabel = "PAID (CLEAR)";
                             badgeStyle = "bg-emerald-500/20 text-emerald-400";
+                          } else if (selectedMemberLedger.isFutureStart) {
+                            statusLabel = "SCHEDULE UPCOMING";
+                            badgeStyle = "bg-slate-500/20 text-slate-400";
                           } else if (cycleNum < selectedMemberLedger.individualCurrentCycle) {
                             statusLabel = "OVERDUE PENDING";
                             badgeStyle = "bg-rose-500/20 text-rose-400";

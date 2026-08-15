@@ -14,11 +14,13 @@ export default function AuditPage() {
   useEffect(() => {
     const fetchAuditLogs = async () => {
       setLoading(true);
-      const res = await supabase.from('admin_audit_logs').select('*');
-      if (res && res.data && Array.isArray(res.data)) {
-        setLogs(res.data);
-      } else {
-        setLogs([]);
+      try {
+        const res = await fetch('/api/audit');
+        const data = await res.json();
+        if (Array.isArray(data)) setLogs(data);
+        else setLogs([]);
+      } catch (err) {
+        console.error("Backend fetch error in audit page:", err);
       }
       setLoading(false);
     };

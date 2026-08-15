@@ -37,11 +37,13 @@ export default function BatchesPage() {
 
   const fetchBatches = async () => {
     setLoading(true);
-    const { data } = await supabase.from('batches').select('*');
-    if (data && Array.isArray(data)) {
-      setBatches(data);
-    } else {
-      setBatches([]);
+    try {
+      const res = await fetch('/api/batches');
+      const data = await res.json();
+      if (Array.isArray(data)) setBatches(data);
+      else setBatches([]);
+    } catch (err) {
+      console.error("Backend fetch error in batches:", err);
     }
     setLoading(false);
   };
@@ -74,13 +76,6 @@ export default function BatchesPage() {
       renewal_day: editRenewalDay
     } : b));
 
-    await supabase.from('batches').update({
-      batch_name: editTitle,
-      batch_code: updatedCode,
-      installment_amount: editAmount,
-      renewal_day: editRenewalDay,
-    }).eq('id', selectedBatch.id);
-
     await fetchBatches();
     setSelectedBatch(null);
     setNotification(`Batch '${updatedCode}' updated successfully!`);
@@ -103,28 +98,6 @@ export default function BatchesPage() {
 
     const formattedCode = batchCode.trim().toUpperCase() || `BATCH-${Math.floor(100 + Math.random() * 900)}`;
 
-    const newBatchObject: Batch = {
-      id: `b_${Date.now()}`,
-      batch_code: formattedCode,
-      batch_name: batchTitle,
-      scheme_type: schemeCategory,
-      total_cycles: totalCycles,
-      installment_amount: installmentAmount,
-      frequency_type: frequencyType,
-      renewal_day: frequencyType !== "DAILY" ? renewalDay : undefined,
-      start_date: startDate,
-      end_date: end.toISOString().split("T")[0],
-      status: "ACTIVE",
-      group_count: 1,
-      customer_count: 0,
-      total_collected: 0,
-      target_amount: installmentAmount * totalCycles * 10,
-      created_at: new Date().toISOString()
-    };
-
-    // INSTANT OPTIMISTIC RENDER (No refresh required!)
-    setBatches(prev => [newBatchObject, ...prev]);
-
     const newBatchRecord = {
       batch_code: formattedCode,
       batch_name: batchTitle,
@@ -138,7 +111,18 @@ export default function BatchesPage() {
       status: "ACTIVE"
     };
 
-    await supabase.from('batches').insert([newBatchRecord]);
+    setBatches(prev => [newBatchRecord as any, ...prev]);
+
+    try {
+      await fetch('/api/batches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newBatchRecord)
+      });
+    } catch (err) {
+      console.error("Backend API batch insert error:", err);
+    }
+
     await fetchBatches();
 
     setIsCreateModalOpen(false);
@@ -198,9 +182,9 @@ export default function BatchesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {batches.map((batch) => (
+            {batches.map((batch, idx) => (
               <div
-                key={batch.id}
+                key={batch.id || batch.batch_code || `batch-${idx}`}
                 onClick={() => openViewModal(batch)}
                 className="p-6 rounded-2xl border glass-panel transition-all flex flex-col justify-between cursor-pointer hover:border-[#0F766E] shadow-sm hover:shadow-md"
               >

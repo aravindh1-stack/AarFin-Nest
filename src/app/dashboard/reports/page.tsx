@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
+import { SkeletonBlock } from "@/components/skeleton-block";
 
 export default function ReportsPage() {
   const [payments, setPayments] = useState<any[]>([]);
@@ -104,11 +105,13 @@ export default function ReportsPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center text-xs text-slate-500">
-                      Loading reports data...
-                    </td>
-                  </tr>
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                      <td colSpan={5} className="px-5 py-3.5">
+                        <SkeletonBlock className="h-7 w-full rounded-lg" />
+                      </td>
+                    </tr>
+                  ))
                 ) : payments.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-5 py-8 text-center text-xs text-slate-500">

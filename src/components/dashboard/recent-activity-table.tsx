@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { StatusPill, type InstallmentStatus } from "@/components/status-pill";
+import { SkeletonBlock } from "@/components/skeleton-block";
 
 interface ActivityRow {
   id: string;
@@ -75,7 +76,7 @@ export function RecentActivityTable() {
           Recent Collections
         </h3>
         <Link
-          href="/collections"
+          href="/dashboard/collections"
           className="text-xs font-semibold text-teal-700 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
         >
           View all →
@@ -96,11 +97,13 @@ export function RecentActivityTable() {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={6} className="px-5 py-8 text-center text-xs text-slate-500">
-                  Loading collections data from DB...
-                </td>
-              </tr>
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                  <td colSpan={6} className="px-5 py-3.5">
+                    <SkeletonBlock className="h-6 w-full rounded-lg" />
+                  </td>
+                </tr>
+              ))
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-5 py-8 text-center text-xs text-slate-500">

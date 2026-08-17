@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { members as mockMembers, type Member } from "@/lib/mock-members";
 import { MemberDrawer } from "@/components/collections/member-drawer";
+import { SkeletonBlock } from "@/components/skeleton-block";
 
 const filters = ["All", "Has Dues", "Has Advance", "Fully Paid"] as const;
 type Filter = (typeof filters)[number];
@@ -142,11 +143,13 @@ export function CollectionsHub() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">
-                    Loading database members...
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                    <td colSpan={6} className="px-5 py-4">
+                      <SkeletonBlock className="h-7 w-full rounded-lg" />
+                    </td>
+                  </tr>
+                ))
               ) : (
                 filtered.map((member) => (
                   <tr

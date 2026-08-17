@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SkeletonBlock } from "@/components/skeleton-block";
 
 function Sparkline({ points }: { points: number[] }) {
   const max = Math.max(...points);
@@ -64,6 +65,16 @@ export function MetricCards() {
 
     loadMetrics();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonBlock key={i} className="h-32 w-full rounded-2xl" />
+        ))}
+      </div>
+    );
+  }
 
   const metrics = [
     {

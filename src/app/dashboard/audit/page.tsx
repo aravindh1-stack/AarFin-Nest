@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
+import { SkeletonBlock } from "@/components/skeleton-block";
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -42,9 +43,11 @@ export default function AuditPage() {
           </div>
 
           {loading ? (
-            <p className="p-10 text-center font-mono text-xs text-slate-500">
-              Loading audit logs...
-            </p>
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonBlock key={i} className="h-12 w-full rounded-xl" />
+              ))}
+            </div>
           ) : logs.length === 0 ? (
             <p className="p-10 text-center text-xs text-slate-500">
               No audit events currently recorded in database.

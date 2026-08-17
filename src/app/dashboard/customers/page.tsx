@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { SkeletonBlock } from "@/components/skeleton-block";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 
 interface Customer {
@@ -176,11 +177,13 @@ export default function CustomersPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-5 py-8 text-center text-xs text-slate-500">
-                      Loading registered members...
-                    </td>
-                  </tr>
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                      <td colSpan={6} className="px-5 py-4">
+                        <SkeletonBlock className="h-7 w-full rounded-lg" />
+                      </td>
+                    </tr>
+                  ))
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-8 text-center text-xs text-slate-500">

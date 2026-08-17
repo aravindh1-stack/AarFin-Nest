@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
+import { SkeletonBlock } from "@/components/skeleton-block";
 
 interface Group {
   id: string;
@@ -91,9 +92,9 @@ export default function RoutesPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
-            <p className="col-span-full py-8 text-center text-xs text-slate-500">
-              Loading route groups...
-            </p>
+            Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonBlock key={i} className="h-44 w-full rounded-2xl" />
+            ))
           ) : (
             groups.map((g) => (
               <div

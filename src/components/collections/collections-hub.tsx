@@ -19,54 +19,201 @@ export function CollectionsHub() {
   const [filter, setFilter] = useState<Filter>("All");
   const [selected, setSelected] = useState<Member | null>(null);
 
-  useEffect(() => {
-    async function loadCustomers() {
-      setLoading(true);
-      try {
-        const custRes = await fetch("/api/customers").then((r) => r.json());
-        if (Array.isArray(custRes) && custRes.length > 0) {
-          const mapped: Member[] = custRes.map((c: any) => {
-            const initials = c.full_name
-              ? c.full_name
-                  .split(" ")
-                  .map((n: string) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)
-              : "MB";
-            const dues = Number(c.pending_dues || c.due_amount || 0);
-            const adv = Number(c.advance_balance || c.advance_amount || 0);
+  const loadCollectionsData = async () => {
+    setLoading(true);
+    try {
+      const [custRes, batchRes, payRes] = await Promise.all([
+        fetch("/api/customers").then((r) => r.json()),
+        fetch("/api/batches").then((r) => r.json()),
+        fetch("/api/payments").then((r) => r.json()),
+      ]);
+
+      const customersList = Array.isArray(custRes) ? custRes : [];
+      const batchesList = Array.isArray(batchRes) ? batchRes : [];
+      const paymentsList = Array.isArray(payRes) ? payRes : [];
+
+      if (customersList.length > 0) {
+        const mapped: Member[] = customersList.map((c: any) => {
+          const initials = c.full_name
+            ? c.full_name
+                .split(" ")
+                .map((n: string) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)
+            : "MB";
+
+          const batch = batchesList.find((b: any) => 
+            (c.batch_id && (b.id === c.batch_id || b.batch_code === c.batch_id)) ||
+            (c.batch_name && (
+              b.batch_name?.toLowerCase() === c.batch_name.toLowerCase() ||
+              b.batch_code?.toLowerCase() === c.batch_name.toLowerCase()
+            ))
+          ) || batchesList[0] || {
+            installment_amount: 5000,
+            total_cycles: 20,
+            frequency_type: "WEEKLY",
+            start_date: "2026-08-01"
+          };
+
+          const instAmt = Number(batch.installment_amount) || 5000;
+          const totalCycles = Number(batch.total_cycles) || 20;
+
+          const memberPayments = paymentsList.filter((p: any) => 
+            p.customer_id === c.id || 
+            p.customer_id === c.customer_code || 
+            (p.customer_name && c.full_name && p.customer_name.toLowerCase() === c.full_name.toLowerCase())
+          );
+          const totalPaidSum = memberPayments.reduce((acc: number, curr: any) => acc + (Number(curr.amount_paid) || 0), 0);
+          const paidCyclesCount = Math.floor(totalPaidSum / instAmt);
+
+          // Read custom interval gap configured in scheme batch
+          const intervalGap = Number(batch.interval_days || batch.interval_gap || 1);
+
+          // Read Late Joiner Policy (OPTION_A, OPTION_B, OPTION_C)
+          const policy = c.late_joiner_policy || "OPTION_A";
+
+          // Calculate batch start date
+          const [bYear, bMonth, bDay] = (batch.start_date || "2026-08-01").split("-").map(Number);
+          const batchStartObj = new Date(bYear, bMonth - 1, bDay);
+          batchStartObj.setHours(0, 0, 0, 0);
+
+          // Calculate customer joining date
+          const cStartStr = c.joining_date || (c.created_at ? c.created_at.split("T")[0] : batch.start_date);
+          const [jYear, jMonth, jDay] = (cStartStr || "2026-08-01").split("-").map(Number);
+          const customerJoinObj = new Date(jYear, jMonth - 1, jDay);
+          customerJoinObj.setHours(0, 0, 0, 0);
+
+          const baseTimelineDateObj = policy === "OPTION_A" ? customerJoinObj : batchStartObj;
+          const [tYear, tMonth, tDay] = policy === "OPTION_A" ? [jYear, jMonth, jDay] : [bYear, bMonth, bDay];
+
+          const todayObj = new Date();
+          todayObj.setHours(0, 0, 0, 0);
+
+          const isFutureStart = baseTimelineDateObj > todayObj;
+          let activeCycleNum = 1;
+
+          if (!isFutureStart) {
+            const diffTime = Math.max(0, todayObj.getTime() - baseTimelineDateObj.getTime());
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const freq = batch.frequency_type || "MONTHLY";
+            const stepDays = freq === "DAILY" ? intervalGap : freq === "WEEKLY" ? intervalGap * 7 : intervalGap * 30;
+            activeCycleNum = Math.min(Math.floor(diffDays / stepDays) + 1, totalCycles);
+          } else {
+            activeCycleNum = 0;
+          }
+
+          let pendingDues = 0;
+          let advanceBalance = 0;
+
+          if (isFutureStart) {
+            pendingDues = 0;
+            advanceBalance = totalPaidSum;
+          } else if (paidCyclesCount >= activeCycleNum) {
+            pendingDues = 0;
+            advanceBalance = (paidCyclesCount - activeCycleNum) * instAmt + (totalPaidSum % instAmt);
+          } else {
+            const overdueCycles = activeCycleNum - paidCyclesCount;
+            pendingDues = overdueCycles * instAmt - (totalPaidSum % instAmt);
+            advanceBalance = 0;
+          }
+
+          // Build cycle installments array dynamically with exact calculated due dates based on interval gap & policy
+          const cycleInstallments = Array.from({ length: totalCycles }).map((_, idx) => {
+            const cycleNum = idx + 1;
+
+            // Calculate exact cycle due date using base timeline date (batch start vs joining date)
+            const freq = batch.frequency_type || "MONTHLY";
+            let cycleDueDateObj;
+            if (freq === "DAILY") {
+              cycleDueDateObj = new Date(tYear, tMonth - 1, tDay + (idx * intervalGap));
+            } else if (freq === "WEEKLY") {
+              cycleDueDateObj = new Date(tYear, tMonth - 1, tDay + (idx * 7 * intervalGap));
+            } else {
+              cycleDueDateObj = new Date(tYear, (tMonth - 1) + (idx * intervalGap), tDay);
+            }
+            cycleDueDateObj.setHours(0, 0, 0, 0);
+
+            const isCycleInFuture = cycleDueDateObj.getTime() > todayObj.getTime();
+            const isPreJoinCycle = policy !== "OPTION_A" && cycleDueDateObj.getTime() < customerJoinObj.getTime();
+
+            const formattedDueDate = cycleDueDateObj.toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric"
+            });
+
+            // Status logic incorporating Option A, B, C:
+            // - Option A: Cycle #1 starts on joining date
+            // - Option B: Past pre-join cycles flagged as PENDING overdue
+            // - Option C: Past pre-join cycles flagged as SKIPPED (₹0)
+            let status: "PAID" | "ADVANCE" | "PARTIAL" | "PENDING" | "UPCOMING" | "SKIPPED" = "UPCOMING";
+
+            if (cycleNum <= paidCyclesCount) {
+              if (isCycleInFuture || isFutureStart) {
+                status = "ADVANCE";
+              } else {
+                status = "PAID";
+              }
+            } else if (isPreJoinCycle) {
+              if (policy === "OPTION_C") {
+                status = "SKIPPED"; // Option C: Disallowed past cycle skipped!
+              } else {
+                status = "PENDING"; // Option B: Past dues carried over as pending!
+              }
+            } else if (isCycleInFuture || isFutureStart) {
+              status = "UPCOMING";
+            } else {
+              status = "PENDING";
+            }
 
             return {
-              id: c.id || c.customer_code || Math.random().toString(),
-              name: c.full_name || "Unknown Member",
-              initials: initials || "MB",
-              phone: c.phone_number || "+91 90000 00000",
-              memberSince: c.joining_date ? new Date(c.joining_date).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "Jan 2026",
-              scheme: c.batch_name || "Micro-Finance Scheme",
-              route: c.group_name || "Default Route",
-              totalPendingDues: dues,
-              advanceBalance: adv,
-              installments: [
-                { cycle: 1, dueDate: "05 Jan 2026", amount: 5000, paidAmount: 5000, status: "PAID" },
-                { cycle: 2, dueDate: "05 Feb 2026", amount: 5000, paidAmount: 2000, status: "PARTIAL" },
-                { cycle: 3, dueDate: "05 Mar 2026", amount: 5000, paidAmount: 0, status: "PENDING" },
-              ],
+              cycle: cycleNum,
+              dueDate: formattedDueDate,
+              amount: status === "SKIPPED" ? 0 : instAmt,
+              paidAmount: cycleNum <= paidCyclesCount ? instAmt : 0,
+              status: status
             };
           });
-          setMemberList(mapped);
-        } else {
-          setMemberList(mockMembers);
-        }
-      } catch (err) {
-        console.error("Error fetching customers for collections hub:", err);
-        setMemberList(mockMembers);
-      } finally {
-        setLoading(false);
-      }
-    }
 
-    loadCustomers();
+          return {
+            id: c.id || c.customer_code || Math.random().toString(),
+            name: c.full_name || "Unknown Member",
+            initials: initials || "MB",
+            phone: c.phone_number || "+91 90000 00000",
+            memberSince: c.joining_date || "Aug 2026",
+            scheme: c.batch_name || batch.batch_name || "Micro-Finance Scheme",
+            route: c.group_name || "Default Route",
+            frequencyType: batch.frequency_type || "DAILY",
+            installmentAmount: instAmt,
+            totalPendingDues: pendingDues,
+            advanceBalance: advanceBalance,
+            installments: cycleInstallments,
+            rawPayments: memberPayments
+          } as any;
+        });
+        setMemberList(mapped);
+
+        // Keep selected drawer member updated with latest receipts & dues
+        if (selected) {
+          const updatedSelected = mapped.find(m => m.id === selected.id);
+          if (updatedSelected) {
+            setSelected(updatedSelected);
+          }
+        }
+      } else {
+        setMemberList(mockMembers);
+      }
+    } catch (err) {
+      console.error("Error fetching collections data:", err);
+      setMemberList(mockMembers);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCollectionsData();
   }, []);
 
   const filtered = useMemo(() => {
@@ -154,7 +301,8 @@ export function CollectionsHub() {
                 filtered.map((member) => (
                   <tr
                     key={member.id}
-                    className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02]"
+                    onClick={() => setSelected(member)}
+                    className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02] cursor-pointer"
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
@@ -199,14 +347,8 @@ export function CollectionsHub() {
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setSelected(member)}
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
-                      >
-                        View
-                      </button>
+                    <td className="px-5 py-3.5 text-right font-medium text-teal-600 dark:text-teal-400">
+                      Collect & Ledger →
                     </td>
                   </tr>
                 ))
@@ -227,7 +369,13 @@ export function CollectionsHub() {
         </div>
       </div>
 
-      <MemberDrawer member={selected} onClose={() => setSelected(null)} />
+      <MemberDrawer
+        member={selected}
+        onClose={() => setSelected(null)}
+        onPaymentRecorded={() => {
+          loadCollectionsData();
+        }}
+      />
     </div>
   );
 }

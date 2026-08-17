@@ -43,7 +43,28 @@ export default function CustomersPage() {
   const [idProof, setIdProof] = useState("");
   const [selectedBatchId, setSelectedBatchId] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [customSeqNum, setCustomSeqNum] = useState("");
+  const [isEditSeq, setIsEditSeq] = useState(false);
   const [joiningDate, setJoiningDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [lateJoinerPolicy, setLateJoinerPolicy] = useState<"OPTION_A" | "OPTION_B" | "OPTION_C">("OPTION_A");
+
+  // Derive Batch Initial Prefix: MNF-[Initial]C-
+  const matchedBatch = useMemo(() => batches.find((b) => b.id === selectedBatchId), [batches, selectedBatchId]);
+  const batchInitial = useMemo(() => {
+    return matchedBatch?.batch_name
+      ? matchedBatch.batch_name.trim().charAt(0).toUpperCase()
+      : "P";
+  }, [matchedBatch]);
+
+  const prefixCode = `MNF-${batchInitial}C-`;
+
+  useEffect(() => {
+    if (!isEditSeq) {
+      setCustomSeqNum(String(customers.length + 1).padStart(3, "0"));
+    }
+  }, [customers.length, isEditSeq]);
+
+  const finalCustomerCode = `${prefixCode}${customSeqNum}`;
 
   const loadData = async () => {
     setLoading(true);
@@ -88,7 +109,7 @@ export default function CustomersPage() {
     const matchedGroup = groups.find((g) => g.id === selectedGroupId);
 
     const payload = {
-      customer_code: `MEM-${Math.floor(1000000 + Math.random() * 9000000)}`,
+      customer_code: finalCustomerCode,
       full_name: fullName,
       phone_number: phone,
       address: address,
@@ -98,6 +119,7 @@ export default function CustomersPage() {
       group_id: selectedGroupId || null,
       group_name: matchedGroup?.group_name || "North Zone A",
       joining_date: joiningDate,
+      late_joiner_policy: lateJoinerPolicy,
       status: "ACTIVE",
     };
 
@@ -258,6 +280,41 @@ export default function CustomersPage() {
             </p>
 
             <form onSubmit={handleEnroll} className="mt-4 space-y-3 text-xs">
+              {/* Protected Member ID UI */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="block font-medium text-slate-700 dark:text-slate-300">
+                    Member ID Code
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditSeq(!isEditSeq)}
+                    className="text-[11px] font-semibold text-teal-600 hover:underline dark:text-teal-400 cursor-pointer"
+                  >
+                    {isEditSeq ? "⚡ Auto-Sequence" : "✏️ Edit Number"}
+                  </button>
+                </div>
+                <div className="mt-1 flex items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-[#000000]">
+                  <span className="shrink-0 whitespace-nowrap select-none bg-slate-200/80 px-3 py-2.5 font-mono font-extrabold text-slate-700 dark:bg-white/10 dark:text-teal-400">
+                    {prefixCode}
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    readOnly={!isEditSeq}
+                    value={customSeqNum}
+                    onChange={(e) => setCustomSeqNum(e.target.value.replace(/\D/g, ""))}
+                    placeholder="001"
+                    className={`w-full bg-transparent px-3 py-2.5 font-mono font-bold outline-none text-slate-900 dark:text-white ${
+                      !isEditSeq ? "cursor-not-allowed text-slate-500" : "focus:ring-2 focus:ring-teal-500"
+                    }`}
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-slate-400">
+                  Protected System Format: <span className="font-mono font-bold text-slate-600 dark:text-slate-300">{prefixCode}[Number]</span> (Prefix <span className="font-mono font-bold text-teal-600 dark:text-teal-400">{prefixCode}</span> is locked; edit number only).
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-slate-700 dark:text-slate-300">
@@ -346,8 +403,85 @@ export default function CustomersPage() {
                   type="date"
                   value={joiningDate}
                   onChange={(e) => setJoiningDate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white font-semibold"
                 />
+              </div>
+
+              {/* Late Joiner Past Cycles Policy Selector */}
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300">
+                  Past Cycles Policy for Late Joiners
+                </label>
+                <div className="mt-1.5 space-y-2">
+                  <label
+                    onClick={() => setLateJoinerPolicy("OPTION_A")}
+                    className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
+                      lateJoinerPolicy === "OPTION_A"
+                        ? "border-teal-500 bg-teal-500/10 text-teal-900 dark:text-teal-200"
+                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-slate-800 dark:bg-white/[0.02] dark:text-slate-400"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="policy"
+                      checked={lateJoinerPolicy === "OPTION_A"}
+                      onChange={() => setLateJoinerPolicy("OPTION_A")}
+                      className="mt-0.5 accent-teal-600"
+                    />
+                    <div>
+                      <p className="font-bold text-xs">Option A: Start Fresh from Joining Date (Dynamic Timeline)</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Cycle #1 starts on joining date. No past dues carried over.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setLateJoinerPolicy("OPTION_B")}
+                    className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
+                      lateJoinerPolicy === "OPTION_B"
+                        ? "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-slate-800 dark:bg-white/[0.02] dark:text-slate-400"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="policy"
+                      checked={lateJoinerPolicy === "OPTION_B"}
+                      onChange={() => setLateJoinerPolicy("OPTION_B")}
+                      className="mt-0.5 accent-amber-600"
+                    />
+                    <div>
+                      <p className="font-bold text-xs">Option B: Carry Previous Dues as Pending (Carried Overdue)</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Past cycles before joining date are flagged as Overdue Pending and added to dues.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setLateJoinerPolicy("OPTION_C")}
+                    className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
+                      lateJoinerPolicy === "OPTION_C"
+                        ? "border-sky-500 bg-sky-500/10 text-sky-900 dark:text-sky-200"
+                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-slate-800 dark:bg-white/[0.02] dark:text-slate-400"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="policy"
+                      checked={lateJoinerPolicy === "OPTION_C"}
+                      onChange={() => setLateJoinerPolicy("OPTION_C")}
+                      className="mt-0.5 accent-sky-600"
+                    />
+                    <div>
+                      <p className="font-bold text-xs">Option C: Skip Disallowed Past Cycles (₹0 Skipped)</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Past cycles before joining date are marked as SKIPPED (₹0) without adding past dues.
+                      </p>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-3">

@@ -11,9 +11,11 @@ function formatCurrency(value: number) {
 export function MemberDrawer({
   member,
   onClose,
+  onPaymentRecorded,
 }: {
   member: Member | null;
   onClose: () => void;
+  onPaymentRecorded?: () => void;
 }) {
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -30,14 +32,17 @@ export function MemberDrawer({
     setFeedbackMsg(null);
 
     try {
+      const receiptNo = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+
       const res = await fetch("/api/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_id: member.id,
-          amount: Number(amount),
+          amount_paid: Number(amount),
           payment_method: "CASH",
-          status: "PAID",
+          receipt_no: receiptNo,
+          notes: "Field Collection Payment Entry",
           payment_date: new Date().toISOString(),
         }),
       });
@@ -45,6 +50,9 @@ export function MemberDrawer({
       if (res.ok) {
         setFeedbackMsg(`✓ Payment of ₹${Number(amount).toLocaleString("en-IN")} recorded to DB!`);
         setAmount("");
+        if (onPaymentRecorded) {
+          onPaymentRecorded();
+        }
         setTimeout(() => setFeedbackMsg(null), 4000);
       } else {
         const err = await res.json();
@@ -86,9 +94,15 @@ export function MemberDrawer({
                   <h2 className="text-base font-bold text-slate-900 dark:text-white">
                     {member.name}
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {member.id} · Member since {member.memberSince}
-                  </p>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs">
+                    <span className="font-bold uppercase text-teal-600 dark:text-teal-400">
+                      {(member as any).frequencyType || "WEEKLY"}
+                    </span>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      Fixed Cycle Amt: {formatCurrency((member as any).installmentAmount || member.installments?.[0]?.amount || 200)}
+                    </span>
+                  </div>
                 </div>
               </div>
               <button
@@ -195,38 +209,48 @@ export function MemberDrawer({
                   </button>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {[
-                    firstOpenInstallment?.amount,
-                    1000,
-                    2000,
-                    5000,
-                  ]
-                    .filter(
-                      (v, i, arr): v is number =>
-                        typeof v === "number" && arr.indexOf(v) === i,
-                    )
-                    .slice(0, 4)
-                    .map((quick) => (
-                      <button
-                        key={quick}
-                        type="button"
-                        onClick={() => setAmount(String(quick))}
-                        className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
-                      >
-                        {formatCurrency(quick)}
-                      </button>
-                    ))}
+                <div className="mt-3.5 flex flex-wrap gap-1.5">
+                  <span className="w-full text-[11px] font-bold uppercase tracking-wider text-slate-400">Quick Presets:</span>
+                  {member.installments?.[0]?.amount && (
+                    <button
+                      type="button"
+                      onClick={() => setAmount(String(member.installments[0].amount))}
+                      className="rounded-lg border border-teal-500/30 bg-teal-500/10 px-2.5 py-1 text-xs font-bold text-teal-600 transition hover:bg-teal-500/20 dark:text-teal-400 cursor-pointer"
+                    >
+                      Cycle ({formatCurrency(member.installments[0].amount)})
+                    </button>
+                  )}
+
+                  {member.totalPendingDues > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAmount(String(member.totalPendingDues))}
+                      className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-500/20 dark:text-rose-400 cursor-pointer"
+                    >
+                      Clear Dues ({formatCurrency(member.totalPendingDues)})
+                    </button>
+                  )}
+
+                  {[200, 500, 1000, 2000, 5000].map((quick) => (
+                    <button
+                      key={quick}
+                      type="button"
+                      onClick={() => setAmount(String(quick))}
+                      className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800 dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
+                    >
+                      {formatCurrency(quick)}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div className="mt-6">
                 <h3 className="mb-3 text-sm font-bold text-slate-900 dark:text-white">
-                  Installment Cycles
+                  Installment Cycles Breakdown
                 </h3>
-                <div className="overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800/50">
+                <div className="max-h-80 overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-800/50 shadow-inner">
                   <table className="min-w-full text-left text-xs">
-                    <thead className="bg-slate-50/80 text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
+                    <thead className="bg-slate-50/80 text-slate-500 dark:bg-white/[0.02] dark:text-slate-400 sticky top-0 backdrop-blur">
                       <tr>
                         <th className="px-3 py-2.5 font-semibold">Cycle</th>
                         <th className="px-3 py-2.5 font-semibold">Due</th>
@@ -260,14 +284,47 @@ export function MemberDrawer({
                   </table>
                 </div>
               </div>
+
+              {/* DB Recorded Receipts Log */}
+              {Array.isArray((member as any).rawPayments) && (member as any).rawPayments.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="mb-3 text-sm font-bold text-slate-900 dark:text-white">
+                    Verified Database Receipts ({(member as any).rawPayments.length})
+                  </h3>
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {(member as any).rawPayments.map((pay: any) => (
+                      <div
+                        key={pay.id || Math.random()}
+                        className="flex items-center justify-between rounded-xl border border-slate-200/70 bg-slate-50/50 p-3 text-xs dark:border-slate-800/50 dark:bg-white/[0.02]"
+                      >
+                        <div>
+                          <p className="font-mono font-bold text-teal-600 dark:text-teal-400">
+                            {pay.receipt_no || pay.receipt_number || "REC-CONFIRMED"}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {pay.notes || pay.payment_method || "Field Collection"}
+                          </p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                            {pay.payment_date?.split("T")[0] || "Today"} · {pay.payment_method || "CASH"}
+                          </p>
+                        </div>
+                        <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                          {formatCurrency(Number(pay.amount_paid || pay.amount || 0))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-slate-200/70 px-6 py-4 dark:border-slate-800/50">
               <button
                 type="button"
+                onClick={onClose}
                 className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
               >
-                View Full Payment History
+                Close Drawer
               </button>
             </div>
           </>

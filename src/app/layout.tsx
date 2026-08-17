@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "@/lib/ThemeContext";
-import PageLoadingOverlay from "@/components/layout/PageLoadingOverlay";
-import { Suspense } from "react";
+import { Urbanist } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import { PageLoader } from "@/components/page-loader";
+import { RouteProgressBar } from "@/components/route-progress-bar";
 import "./globals.css";
 
+const urbanist = Urbanist({
+  variable: "--font-urbanist",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "AarFin - Financial Command Center",
-  description: "Enterprise SaaS Command Center for Seetu, Vaara Kandhu, and Dhina Kandhu Micro-finance Schemes",
+  title: "NexFix | Enterprise Micro-Finance & Chit-Fund SaaS OS",
+  description:
+    "Scale your micro-finance operations with atomic FIFO allocation, multi-scheme engines, and real-time telemetry.",
 };
 
 export default function RootLayout({
@@ -15,17 +23,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet" />
-      </head>
-      <body className="antialiased min-h-screen">
+    <html
+      lang="en"
+      className={`${urbanist.variable} dark h-full`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-full font-sans antialiased">
         <ThemeProvider>
-          <Suspense fallback={null}>
-            <PageLoadingOverlay />
-          </Suspense>
+          <PageLoader />
+          <RouteProgressBar />
           {children}
         </ThemeProvider>
       </body>

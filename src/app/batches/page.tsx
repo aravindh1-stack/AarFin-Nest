@@ -317,7 +317,7 @@ export default function BatchesPage() {
                 </div>
               ) : (
                 /* EDIT FORM STATE */
-                <form onSubmit={handleSaveChanges} className="space-y-4 text-xs font-sans">
+                <form onSubmit={handleUpdateBatch} className="space-y-4 text-xs font-sans">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block font-semibold mb-1 opacity-80">Batch Title</label>
@@ -409,7 +409,7 @@ export default function BatchesPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateBatchAndCycles} className="space-y-4 text-xs font-sans">
+              <form onSubmit={handleCreateBatch} className="space-y-4 text-xs font-sans">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block font-semibold mb-1 opacity-80">Batch / Scheme Title</label>

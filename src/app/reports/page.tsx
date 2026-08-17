@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { supabase } from "@/lib/supabase/client";
 import { Customer, Batch, Group, Payment } from "@/lib/types";
 import { 
@@ -153,11 +153,15 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-300 font-sans" style={{ backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}>
-      <Sidebar />
-      <Header title="Advanced PDF Financial Reports & Export Studio" subtitle="Generate Custom Granular PDFs for Single Member, All Batch Groups, Specific Route Groups & Date Presets" />
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
+      <DashboardSidebar />
+      <div className="lg:pl-64">
+        <DashboardTopbar
+          title="Financial Reports & Export Studio"
+          description="Generate Custom Granular PDFs for Single Member, All Batch Groups, Specific Route Groups & Date Presets"
+        />
 
-      <main className="ml-64 p-6 space-y-6">
+        <main className="px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         {/* 1. SELECTION CONTROLS PANEL */}
         <div className="p-6 rounded-2xl border glass-panel space-y-5 shadow-sm">
           <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: "var(--border-color)" }}>
@@ -354,5 +358,6 @@ export default function ReportsPage() {
         </div>
       </main>
     </div>
-  );
+  </div>
+);
 }

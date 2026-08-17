@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { supabase } from "@/lib/supabase/client";
 import { Customer, Batch, Group, LateJoinerPolicy } from "@/lib/types";
 import { UserPlus, Phone, Search, X, CheckCircle2, Sparkles, Users, MapPin, Layers, Eye, Calendar, DollarSign, Edit3, Save } from "lucide-react";
@@ -288,11 +288,15 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-300 font-sans" style={{ backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}>
-      <Sidebar />
-      <Header title="Customer Directory & Batch/Group Enrollment" subtitle="Click any member row to view details, ledger health & assigned route groups" />
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
+      <DashboardSidebar />
+      <div className="lg:pl-64">
+        <DashboardTopbar
+          title="Customer Directory & Enrollment"
+          description="View member profiles, ledger health & assigned route groups"
+        />
 
-      <main className="ml-64 p-6 space-y-6">
+        <main className="px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         {notification && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 p-4 rounded-xl flex items-center justify-between shadow-md">
             <div className="flex items-center gap-3">
@@ -925,5 +929,6 @@ export default function CustomersPage() {
         )}
       </main>
     </div>
-  );
+  </div>
+);
 }

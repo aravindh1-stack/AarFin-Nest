@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { supabase } from "@/lib/supabase/client";
 import { Batch, Installment, SchemeType, FrequencyType } from "@/lib/types";
 import { Plus, Calendar, X, Sparkles, CheckCircle2, Edit3, Eye, Save, Layers } from "lucide-react";
@@ -61,72 +61,82 @@ export default function BatchesPage() {
     setIsEditMode(false);
   };
 
-  const handleSaveChanges = async (e: React.FormEvent) => {
+  const handleUpdateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBatch) return;
 
-    const updatedCode = editCode.toUpperCase();
+    const { error } = await supabase
+      .from('batches')
+      .update({
+        batch_name: editTitle,
+        batch_code: editCode,
+        installment_amount: editAmount,
+        renewal_day: editRenewalDay
+      })
+      .eq('id', selectedBatch.id);
 
-    // Optimistic UI state update
-    setBatches(prev => prev.map(b => b.id === selectedBatch.id ? {
-      ...b,
-      batch_name: editTitle,
-      batch_code: updatedCode,
-      installment_amount: editAmount,
-      renewal_day: editRenewalDay
-    } : b));
+    if (error) {
+      alert("Error updating batch: " + error.message);
+      return;
+    }
 
-    await fetchBatches();
-    setSelectedBatch(null);
-    setNotification(`Batch '${updatedCode}' updated successfully!`);
+    setNotification(`Batch "${editTitle}" updated successfully!`);
     setTimeout(() => setNotification(null), 5000);
+
+    setSelectedBatch(null);
+    setIsEditMode(false);
+    fetchBatches();
   };
 
-  const handleCreateBatchAndCycles = async (e: React.FormEvent) => {
+  const handleCreateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let computedCycles = totalCycles;
+    let computedEnd = "";
 
-    const start = new Date(startDate);
-    let end = new Date(startDate);
-
-    if (frequencyType === "DAILY") {
-      end.setDate(start.getDate() + totalCycles);
+    const startObj = new Date(startDate);
+    if (frequencyType === "MONTHLY") {
+      const endObj = new Date(startObj);
+      endObj.setMonth(endObj.getMonth() + totalCycles);
+      computedEnd = endObj.toISOString().split("T")[0];
     } else if (frequencyType === "WEEKLY") {
-      end.setDate(start.getDate() + (totalCycles * 7));
-    } else if (frequencyType === "MONTHLY") {
-      end.setMonth(start.getMonth() + totalCycles);
+      const endObj = new Date(startObj);
+      endObj.setDate(endObj.getDate() + (totalCycles * 7));
+      computedEnd = endObj.toISOString().split("T")[0];
+    } else if (frequencyType === "DAILY") {
+      const endObj = new Date(startObj);
+      endObj.setDate(endObj.getDate() + totalCycles);
+      computedEnd = endObj.toISOString().split("T")[0];
     }
 
-    const formattedCode = batchCode.trim().toUpperCase() || `BATCH-${Math.floor(100 + Math.random() * 900)}`;
-
-    const newBatchRecord = {
-      batch_code: formattedCode,
+    const payload = {
       batch_name: batchTitle,
-      scheme_type: schemeCategory,
-      total_cycles: totalCycles,
-      installment_amount: installmentAmount,
+      batch_code: batchCode || `BTC-${Math.floor(100 + Math.random() * 900)}`,
+      scheme_category: schemeCategory,
       frequency_type: frequencyType,
-      renewal_day: frequencyType !== "DAILY" ? renewalDay : null,
+      installment_amount: installmentAmount,
+      total_cycles: computedCycles,
       start_date: startDate,
-      end_date: end.toISOString().split("T")[0],
-      status: "ACTIVE"
+      end_date: computedEnd,
+      renewal_day: renewalDay
     };
 
-    setBatches(prev => [newBatchRecord as any, ...prev]);
+    const res = await fetch('/api/batches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-    try {
-      await fetch('/api/batches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBatchRecord)
-      });
-    } catch (err) {
-      console.error("Backend API batch insert error:", err);
+    if (!res.ok) {
+      const err = await res.json();
+      alert("Error creating batch: " + err.error);
+      return;
     }
 
-    await fetchBatches();
-
+    fetchBatches();
     setIsCreateModalOpen(false);
-    setNotification(`Batch '${formattedCode}' created successfully!`);
+
+    setNotification(`New Batch "${batchTitle}" Created Successfully in Supabase DB!`);
     setTimeout(() => setNotification(null), 5000);
 
     setBatchTitle("");
@@ -134,11 +144,15 @@ export default function BatchesPage() {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-300 font-sans" style={{ backgroundColor: "var(--bg-main)", color: "var(--text-main)" }}>
-      <Sidebar />
-      <Header title="Scheme & Batch Management" subtitle="Create, View, and Edit Palagara Seetu, Vaara Kandhu & Dhina Kandhu Batches" />
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
+      <DashboardSidebar />
+      <div className="lg:pl-64">
+        <DashboardTopbar
+          title="Scheme & Batch Management"
+          description="Create, View, and Edit Palagara Seetu, Vaara Kandhu & Dhina Kandhu Batches"
+        />
 
-      <main className="ml-64 p-6 space-y-6">
+        <main className="px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         {notification && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 p-4 rounded-xl flex items-center justify-between shadow-md">
             <div className="flex items-center gap-3">
@@ -515,5 +529,6 @@ export default function BatchesPage() {
         )}
       </main>
     </div>
-  );
+  </div>
+);
 }

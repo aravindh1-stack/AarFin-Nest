@@ -9,23 +9,17 @@ const navGroups = [
     label: "Workspace",
     items: [
       { label: "Overview", href: "/dashboard", icon: "◫" },
-      { label: "Collections Hub", href: "/dashboard/collections", icon: "◈" },
-      { label: "Schemes", href: "/dashboard/schemes", icon: "⚛" },
-      { label: "Routes & Groups", href: "/dashboard/routes", icon: "◎" },
+      { label: "Collections Hub", href: "/collections", icon: "◈" },
+      { label: "Schemes & Batches", href: "/batches", icon: "⚛" },
+      { label: "Routes & Groups", href: "/groups", icon: "◎" },
+      { label: "Customers", href: "/customers", icon: "👤" },
     ],
   },
   {
     label: "Insights",
     items: [
-      { label: "Reports", href: "/dashboard/reports", icon: "▤" },
-      { label: "Audit Logs", href: "/dashboard/audit", icon: "◉" },
-    ],
-  },
-  {
-    label: "Organization",
-    items: [
-      { label: "Branch Tenants", href: "/dashboard/branches", icon: "⌘" },
-      { label: "Settings", href: "/dashboard/settings", icon: "⚙" },
+      { label: "Reports", href: "/reports", icon: "▤" },
+      { label: "Audit Logs", href: "/audit", icon: "◉" },
     ],
   },
 ];

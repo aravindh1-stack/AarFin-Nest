@@ -1,37 +1,6 @@
-const metrics = [
-  {
-    label: "Active Schemes",
-    value: "248",
-    delta: "+12.4%",
-    trend: "up" as const,
-    icon: "⚛",
-    sparkline: [4, 6, 5, 8, 7, 10, 9, 12],
-  },
-  {
-    label: "Collections Today",
-    value: "₹18.6L",
-    delta: "+8.2%",
-    trend: "up" as const,
-    icon: "◈",
-    sparkline: [3, 5, 4, 6, 8, 7, 9, 11],
-  },
-  {
-    label: "FIFO Allocations",
-    value: "1,942",
-    delta: "99.8% accuracy",
-    trend: "flat" as const,
-    icon: "◉",
-    sparkline: [8, 8, 9, 9, 8, 10, 9, 10],
-  },
-  {
-    label: "Branch Tenants",
-    value: "36",
-    delta: "Multi-region",
-    trend: "flat" as const,
-    icon: "⌘",
-    sparkline: [2, 2, 3, 3, 3, 4, 4, 4],
-  },
-];
+"use client";
+
+import { useEffect, useState } from "react";
 
 function Sparkline({ points }: { points: number[] }) {
   const max = Math.max(...points);
@@ -61,6 +30,76 @@ function Sparkline({ points }: { points: number[] }) {
 }
 
 export function MetricCards() {
+  const [batchesCount, setBatchesCount] = useState<number | string>("...");
+  const [customersCount, setCustomersCount] = useState<number | string>("...");
+  const [groupsCount, setGroupsCount] = useState<number | string>("...");
+  const [totalCollections, setTotalCollections] = useState<string>("₹0");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadMetrics() {
+      setLoading(true);
+      try {
+        const [bRes, cRes, gRes, pRes] = await Promise.all([
+          fetch("/api/batches").then((r) => r.json()),
+          fetch("/api/customers").then((r) => r.json()),
+          fetch("/api/groups").then((r) => r.json()),
+          fetch("/api/payments").then((r) => r.json()),
+        ]);
+
+        if (Array.isArray(bRes)) setBatchesCount(bRes.length);
+        if (Array.isArray(cRes)) setCustomersCount(cRes.length);
+        if (Array.isArray(gRes)) setGroupsCount(gRes.length);
+
+        if (Array.isArray(pRes)) {
+          const totalSum = pRes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+          setTotalCollections(`₹${totalSum.toLocaleString("en-IN")}`);
+        }
+      } catch (err) {
+        console.error("Error fetching live metrics:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMetrics();
+  }, []);
+
+  const metrics = [
+    {
+      label: "Active Schemes & Batches",
+      value: String(batchesCount),
+      delta: "Live DB Sync",
+      trend: "up" as const,
+      icon: "⚛",
+      sparkline: [4, 6, 5, 8, 7, 10, 9, 12],
+    },
+    {
+      label: "Registered Customers",
+      value: String(customersCount),
+      delta: "Active Members",
+      trend: "up" as const,
+      icon: "👥",
+      sparkline: [3, 5, 4, 6, 8, 7, 9, 11],
+    },
+    {
+      label: "Total Collections",
+      value: totalCollections,
+      delta: "Atomic FIFO Ledger",
+      trend: "up" as const,
+      icon: "◈",
+      sparkline: [8, 8, 9, 9, 8, 10, 9, 10],
+    },
+    {
+      label: "Route Groups",
+      value: String(groupsCount),
+      delta: "Geographical Isolation",
+      trend: "flat" as const,
+      icon: "◎",
+      sparkline: [2, 2, 3, 3, 3, 4, 4, 4],
+    },
+  ];
+
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {metrics.map((metric) => (

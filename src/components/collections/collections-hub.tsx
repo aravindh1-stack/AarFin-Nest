@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { members, type Member } from "@/lib/mock-members";
+import { useEffect, useMemo, useState } from "react";
+import { members as mockMembers, type Member } from "@/lib/mock-members";
 import { MemberDrawer } from "@/components/collections/member-drawer";
 
 const filters = ["All", "Has Dues", "Has Advance", "Fully Paid"] as const;
@@ -12,12 +12,64 @@ function formatCurrency(value: number) {
 }
 
 export function CollectionsHub() {
+  const [memberList, setMemberList] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
   const [selected, setSelected] = useState<Member | null>(null);
 
+  useEffect(() => {
+    async function loadCustomers() {
+      setLoading(true);
+      try {
+        const custRes = await fetch("/api/customers").then((r) => r.json());
+        if (Array.isArray(custRes) && custRes.length > 0) {
+          const mapped: Member[] = custRes.map((c: any) => {
+            const initials = c.full_name
+              ? c.full_name
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2)
+              : "MB";
+            const dues = Number(c.pending_dues || c.due_amount || 0);
+            const adv = Number(c.advance_balance || c.advance_amount || 0);
+
+            return {
+              id: c.id || c.customer_code || Math.random().toString(),
+              name: c.full_name || "Unknown Member",
+              initials: initials || "MB",
+              phone: c.phone_number || "+91 90000 00000",
+              memberSince: c.joining_date ? new Date(c.joining_date).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "Jan 2026",
+              scheme: c.batch_name || "Micro-Finance Scheme",
+              route: c.group_name || "Default Route",
+              totalPendingDues: dues,
+              advanceBalance: adv,
+              installments: [
+                { cycle: 1, dueDate: "05 Jan 2026", amount: 5000, paidAmount: 5000, status: "PAID" },
+                { cycle: 2, dueDate: "05 Feb 2026", amount: 5000, paidAmount: 2000, status: "PARTIAL" },
+                { cycle: 3, dueDate: "05 Mar 2026", amount: 5000, paidAmount: 0, status: "PENDING" },
+              ],
+            };
+          });
+          setMemberList(mapped);
+        } else {
+          setMemberList(mockMembers);
+        }
+      } catch (err) {
+        console.error("Error fetching customers for collections hub:", err);
+        setMemberList(mockMembers);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCustomers();
+  }, []);
+
   const filtered = useMemo(() => {
-    return members.filter((member) => {
+    return memberList.filter((member) => {
       const matchesQuery =
         member.name.toLowerCase().includes(query.toLowerCase()) ||
         member.route.toLowerCase().includes(query.toLowerCase()) ||
@@ -31,7 +83,7 @@ export function CollectionsHub() {
 
       return matchesQuery && matchesFilter;
     });
-  }, [query, filter]);
+  }, [memberList, query, filter]);
 
   return (
     <div>
@@ -89,67 +141,75 @@ export function CollectionsHub() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((member) => (
-                <tr
-                  key={member.id}
-                  className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02]"
-                >
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-[11px] font-bold text-white">
-                        {member.initials}
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-800 dark:text-slate-200">
-                          {member.name}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-500">
-                          {member.id}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
-                    {member.scheme}
-                  </td>
-                  <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
-                    {member.route}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {member.totalPendingDues > 0 ? (
-                      <span className="font-semibold text-rose-600 dark:text-rose-400">
-                        {formatCurrency(member.totalPendingDues)}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 dark:text-slate-500">
-                        —
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {member.advanceBalance > 0 ? (
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                        {formatCurrency(member.advanceBalance)}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 dark:text-slate-500">
-                        —
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setSelected(member)}
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
-                    >
-                      View
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">
+                    Loading database members...
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((member) => (
+                  <tr
+                    key={member.id}
+                    className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02]"
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-[11px] font-bold text-white">
+                          {member.initials}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-800 dark:text-slate-200">
+                            {member.name}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-500">
+                            {member.id}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
+                      {member.scheme}
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
+                      {member.route}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {member.totalPendingDues > 0 ? (
+                        <span className="font-semibold text-rose-600 dark:text-rose-400">
+                          {formatCurrency(member.totalPendingDues)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500">
+                          —
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {member.advanceBalance > 0 ? (
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(member.advanceBalance)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500">
+                          —
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setSelected(member)}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
 
-              {filtered.length === 0 && (
+              {!loading && filtered.length === 0 && (
                 <tr>
                   <td
                     colSpan={6}

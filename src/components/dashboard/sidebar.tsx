@@ -10,6 +10,7 @@ const navGroups = [
     items: [
       { label: "Overview", href: "/dashboard", icon: "◫" },
       { label: "Collections Hub", href: "/dashboard/collections", icon: "◈" },
+      { label: "Customer Directory", href: "/dashboard/customers", icon: "👤" },
       { label: "Schemes", href: "/dashboard/schemes", icon: "⚛" },
       { label: "Routes & Groups", href: "/dashboard/routes", icon: "◎" },
     ],

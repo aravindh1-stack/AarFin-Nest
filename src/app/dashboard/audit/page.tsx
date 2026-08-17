@@ -27,7 +27,7 @@ export default function AuditPage() {
     <div>
       <DashboardTopbar
         title="Audit Logs"
-        description="Immutable system transaction logs and security tracking via Supabase DB"
+        description="Immutable system transaction logs and security tracking"
       />
 
       <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -43,7 +43,7 @@ export default function AuditPage() {
 
           {loading ? (
             <p className="p-10 text-center font-mono text-xs text-slate-500">
-              Querying audit trail from Supabase...
+              Loading audit logs...
             </p>
           ) : logs.length === 0 ? (
             <p className="p-10 text-center text-xs text-slate-500">

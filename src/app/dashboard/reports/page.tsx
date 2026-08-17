@@ -43,7 +43,7 @@ export default function ReportsPage() {
               Financial Summary
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Synced from Supabase PostgreSQL public.payments
+              Real-time collection transactions and revenue breakdown
             </p>
           </div>
           <button

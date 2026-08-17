@@ -78,7 +78,7 @@ export default function SchemesPage() {
               Active Scheme Batches
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Synced from Supabase PostgreSQL public.batches
+              Active scheme rules, total cycles, and installment parameters
             </p>
           </div>
           <button

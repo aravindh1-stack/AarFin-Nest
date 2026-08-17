@@ -251,7 +251,7 @@ export default function CustomersPage() {
               Enroll New Customer / Member
             </h3>
             <p className="mt-1 text-xs text-slate-500">
-              Saves directly into Supabase PostgreSQL public.customers
+              Enter member personal details and assign scheme batch & route group.
             </p>
 
             <form onSubmit={handleEnroll} className="mt-4 space-y-3 text-xs">

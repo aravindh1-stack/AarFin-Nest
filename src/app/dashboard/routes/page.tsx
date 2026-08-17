@@ -77,7 +77,7 @@ export default function RoutesPage() {
               Geographical Route Groups
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Synced from Supabase PostgreSQL public.groups
+              Geographical agent routes and collection assignments
             </p>
           </div>
           <button

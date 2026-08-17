@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: rgba(255, 255, 255, 0.72);
+  --accent: #0f766e;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #e2e8f0;
+  --card: rgba(18, 18, 18, 0.72);
+  --accent: #14b8a6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif;
+}
+
 @layer base {
   /* 1. LIGHT THEME (DEFAULT) */
   .theme-light {
@@ -27,10 +49,45 @@
 }
 
 body {
-  font-family: 'Urbanist', system-ui, sans-serif;
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Urbanist', var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Urbanist', sans-serif;
+  font-weight: 700;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+@keyframes loader-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(60%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out both;
 }
 
 .glass-panel {
@@ -54,3 +111,4 @@ body {
   background: var(--brand-primary);
   border-radius: 3px;
 }
+

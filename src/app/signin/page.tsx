@@ -5,18 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 
-export default function LoginPage() {
+export default function SignInPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      document.cookie = "aarfin_session=authenticated; path=/; max-age=86400";
-      router.push("/dashboard");
-    }, 400);
+    router.push("/dashboard");
   };
 
   return (
@@ -52,8 +47,6 @@ export default function LoginPage() {
               <input
                 id="email"
                 type="email"
-                required
-                defaultValue="admin@aarfin.com"
                 placeholder="you@branch.com"
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
               />
@@ -78,8 +71,6 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  required
-                  defaultValue="admin123"
                   placeholder="••••••••••"
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
                 />
@@ -96,7 +87,6 @@ export default function LoginPage() {
             <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <input
                 type="checkbox"
-                defaultChecked
                 className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 dark:border-slate-700 dark:bg-[#121212]"
               />
               Keep me signed in
@@ -104,10 +94,9 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-teal-700/25 transition hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
+              className="w-full rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-teal-700/25 transition hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500"
             >
-              {loading ? "Signing In..." : "Sign In"}
+              Sign In
             </button>
           </form>
 

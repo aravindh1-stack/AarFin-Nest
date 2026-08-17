@@ -6,20 +6,26 @@ import { useTheme } from "@/components/theme-provider";
 
 const navGroups = [
   {
-    label: "Workspace",
+    label: "WORKSPACE",
     items: [
       { label: "Overview", href: "/dashboard", icon: "◫" },
-      { label: "Collections Hub", href: "/collections", icon: "◈" },
-      { label: "Schemes & Batches", href: "/batches", icon: "⚛" },
-      { label: "Routes & Groups", href: "/groups", icon: "◎" },
-      { label: "Customers", href: "/customers", icon: "👤" },
+      { label: "Collections Hub", href: "/dashboard/collections", icon: "◈" },
+      { label: "Schemes", href: "/dashboard/schemes", icon: "⚛" },
+      { label: "Routes & Groups", href: "/dashboard/routes", icon: "◎" },
     ],
   },
   {
-    label: "Insights",
+    label: "INSIGHTS",
     items: [
-      { label: "Reports", href: "/reports", icon: "▤" },
-      { label: "Audit Logs", href: "/audit", icon: "◉" },
+      { label: "Reports", href: "/dashboard/reports", icon: "▤" },
+      { label: "Audit Logs", href: "/dashboard/audit", icon: "◉" },
+    ],
+  },
+  {
+    label: "ORGANIZATION",
+    items: [
+      { label: "Branch Tenants", href: "/dashboard/branches", icon: "⌘" },
+      { label: "Settings", href: "/dashboard/settings", icon: "⚙" },
     ],
   },
 ];
@@ -85,7 +91,7 @@ export function DashboardSidebar() {
                       href={item.href}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                         active
-                          ? "bg-teal-500/10 text-teal-700 dark:bg-teal-400/10 dark:text-teal-300"
+                          ? "bg-teal-500/10 text-teal-700 dark:bg-teal-400/10 dark:text-teal-300 font-semibold"
                           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                       }`}
                     >

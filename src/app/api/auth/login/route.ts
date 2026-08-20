@@ -15,7 +15,11 @@ export async function POST(request: NextRequest) {
     
     // Check if matching admin exists
     const matchingAdmin = Array.isArray(admins)
-      ? admins.find((a: any) => a.email.toLowerCase() === email.trim().toLowerCase())
+      ? admins.find((a: any) => {
+          const matchEmail = a.email?.toLowerCase() === email.trim().toLowerCase();
+          const matchPassword = a.password ? a.password === password : true;
+          return matchEmail && matchPassword;
+        })
       : null;
 
     // Fallback default admin if DB is unseeded

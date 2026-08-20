@@ -8,6 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.admins (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email TEXT UNIQUE NOT NULL,
+    password TEXT,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'SUPER_ADMIN',
     avatar_url TEXT,

@@ -15,5 +15,4 @@ VALUES (
 )
 ON CONFLICT (email) 
 DO UPDATE SET 
-    password = EXCLUDED.password,
-    updated_at = NOW();
+    password = EXCLUDED.password;

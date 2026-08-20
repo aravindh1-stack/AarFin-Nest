@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
     const matchingAdmin = Array.isArray(admins)
       ? admins.find((a: any) => {
           const matchEmail = a.email?.toLowerCase() === email.trim().toLowerCase();
-          const matchPassword = a.password ? a.password === password : true;
+          const matchPassword = (a.password || a.password_hash) 
+            ? (a.password === password || a.password_hash === password) 
+            : true;
           return matchEmail && matchPassword;
         })
       : null;

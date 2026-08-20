@@ -7,16 +7,37 @@ import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState("admin@aarfin.com");
+  const [password, setPassword] = useState("admin123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      document.cookie = "aarfin_session=authenticated; path=/; max-age=86400";
-      router.push("/dashboard");
-    }, 400);
+    setErrorMessage("");
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        document.cookie = "aarfin_session=authenticated; path=/; max-age=86400";
+        router.push("/dashboard");
+      } else {
+        setErrorMessage(data.message || "Incorrect email or password");
+        setLoading(false);
+      }
+    } catch (err) {
+      setErrorMessage("Network error while connecting to database");
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,6 +62,12 @@ export default function LoginPage() {
             Sign in to your branch workspace.
           </p>
 
+          {errorMessage && (
+            <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-600 dark:text-red-400">
+              {errorMessage}
+            </div>
+          )}
+
           <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
             <div>
               <label
@@ -53,7 +80,8 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 required
-                defaultValue="admin@aarfin.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@branch.com"
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
               />
@@ -79,7 +107,8 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  defaultValue="admin123"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••"
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
                 />

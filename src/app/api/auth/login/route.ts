@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/backend/config/supabaseAdmin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Email and password are required' }, { status: 400 });
     }
 
-    // 1. Query admins table from Supabase / Local DB
-    const { data: admins } = await supabase.from('admins').select('*');
+    // 1. Query admins table from Supabase with Service Role Key
+    const { data: admins } = await supabaseAdmin.from('admins').select('*');
     
     // Check if matching admin exists in Supabase DB / local DB
     const matchingAdmin = Array.isArray(admins)

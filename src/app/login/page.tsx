@@ -7,8 +7,8 @@ import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@aarfin.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");

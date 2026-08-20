@@ -13,24 +13,24 @@ export async function POST(request: NextRequest) {
     // 1. Query admins table from Supabase / Local DB
     const { data: admins } = await supabase.from('admins').select('*');
     
-    // Check if matching admin exists
+    // Check if matching admin exists in Supabase DB / local DB
     const matchingAdmin = Array.isArray(admins)
       ? admins.find((a: any) => {
-          const matchEmail = a.email?.toLowerCase() === email.trim().toLowerCase();
-          const matchPassword = (a.password || a.password_hash) 
-            ? (a.password === password || a.password_hash === password) 
-            : true;
-          return matchEmail && matchPassword;
+          const matchUsernameOrEmail = 
+            (a.email && a.email.toLowerCase() === email.trim().toLowerCase()) ||
+            (a.username && a.username.toLowerCase() === email.trim().toLowerCase());
+
+          const dbPassword = a.password || a.password_hash;
+          const matchPassword = dbPassword ? dbPassword === password : false;
+          
+          return matchUsernameOrEmail && matchPassword;
         })
       : null;
 
-    // Fallback default admin if DB is unseeded
-    const isDefaultAdmin = email.trim().toLowerCase() === 'admin@aarfin.com' && password === 'admin123';
-
-    if (matchingAdmin || isDefaultAdmin) {
+    if (matchingAdmin) {
       const response = NextResponse.json({
         success: true,
-        user: matchingAdmin || { email: 'admin@aarfin.com', full_name: 'System Admin', role: 'SUPER_ADMIN' }
+        user: matchingAdmin
       });
 
       response.cookies.set('aarfin_session', 'authenticated', {

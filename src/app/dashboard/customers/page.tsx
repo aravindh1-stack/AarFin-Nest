@@ -184,94 +184,173 @@ export default function CustomersPage() {
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm dark:border-slate-800/50 dark:bg-[#121212]/70">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-50/80 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
-                <tr>
-                  <th className="px-5 py-3 font-semibold">Member</th>
-                  <th className="px-5 py-3 font-semibold">Phone</th>
-                  <th className="px-5 py-3 font-semibold">Scheme Batch</th>
-                  <th className="px-5 py-3 font-semibold">Route Group</th>
-                  <th className="px-5 py-3 font-semibold">Joining Date</th>
-                  <th className="px-5 py-3 font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
-                      <td colSpan={6} className="px-5 py-4">
-                        <SkeletonBlock className="h-7 w-full rounded-lg" />
-                      </td>
-                    </tr>
-                  ))
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-5 py-8 text-center text-xs text-slate-500">
-                      No members found matching this search.
+      {/* MOBILE MEMBER CARDS (Visible only on mobile screens < md) */}
+      <div className="mt-4 space-y-3 md:hidden">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonBlock key={i} className="h-32 w-full rounded-2xl" />
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-8 text-center text-xs text-slate-500 dark:border-slate-800/50 dark:bg-[#121212]/70">
+            No members found matching this search.
+          </div>
+        ) : (
+          filtered.map((c) => {
+            const initials = c.full_name
+              ? c.full_name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()
+              : "MB";
+            return (
+              <div
+                key={c.id}
+                className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm dark:border-slate-800/60 dark:bg-[#121212]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-xs font-bold text-white shadow-sm">
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-slate-900 dark:text-white text-sm">
+                        {c.full_name}
+                      </p>
+                      <p className="text-[11px] font-mono text-slate-400">
+                        {c.customer_code || c.id}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="shrink-0 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    {c.status || "ACTIVE"}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="rounded-md border border-teal-500/20 bg-teal-500/10 px-2 py-0.5 font-semibold text-teal-700 dark:text-teal-300">
+                    {c.batch_name || "Palagara Seetu"}
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    {c.group_name || "North Zone A"}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs dark:border-slate-800/50">
+                  <span className="text-[11px] text-slate-400">
+                    Joined: {c.joining_date || "Aug 2026"}
+                  </span>
+
+                  {c.phone_number ? (
+                    <a
+                      href={`tel:${c.phone_number}`}
+                      className="flex items-center gap-1 rounded-lg bg-teal-500/10 px-2.5 py-1 text-[11px] font-bold text-teal-700 dark:text-teal-300 transition hover:bg-teal-500/20"
+                    >
+                      <span>📞 Call</span>
+                      <span className="font-mono">{c.phone_number}</span>
+                    </a>
+                  ) : (
+                    <span className="text-slate-400">No Phone</span>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* DESKTOP / TABLET TABLE (Visible md and above) */}
+      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm md:block dark:border-slate-800/50 dark:bg-[#121212]/70">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-slate-50/80 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
+              <tr>
+                <th className="px-5 py-3 font-semibold">Member</th>
+                <th className="px-5 py-3 font-semibold">Phone</th>
+                <th className="px-5 py-3 font-semibold">Scheme Batch</th>
+                <th className="px-5 py-3 font-semibold">Route Group</th>
+                <th className="px-5 py-3 font-semibold">Joining Date</th>
+                <th className="px-5 py-3 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                    <td colSpan={6} className="px-5 py-4">
+                      <SkeletonBlock className="h-7 w-full rounded-lg" />
                     </td>
                   </tr>
-                ) : (
-                  filtered.map((c) => {
-                    const initials = c.full_name
-                      ? c.full_name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()
-                      : "MB";
-                    return (
-                      <tr
-                        key={c.id}
-                        className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02]"
-                      >
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-[11px] font-bold text-white">
-                              {initials}
-                            </div>
-                            <div>
-                              <p className="font-medium text-slate-800 dark:text-slate-200">
-                                {c.full_name}
-                              </p>
-                              <p className="text-xs font-mono text-slate-400">
-                                {c.customer_code || c.id}
-                              </p>
-                            </div>
+                ))
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-xs text-slate-500">
+                    No members found matching this search.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((c) => {
+                  const initials = c.full_name
+                    ? c.full_name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()
+                    : "MB";
+                  return (
+                    <tr
+                      key={c.id}
+                      className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02]"
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-[11px] font-bold text-white">
+                            {initials}
                           </div>
-                        </td>
-                        <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
-                          {c.phone_number || "—"}
-                        </td>
-                        <td className="px-5 py-3.5 font-medium text-teal-600 dark:text-teal-400">
-                          {c.batch_name || "Palagara Seetu"}
-                        </td>
-                        <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
-                          {c.group_name || "North Zone A"}
-                        </td>
-                        <td className="px-5 py-3.5 text-xs text-slate-500 dark:text-slate-400">
-                          {c.joining_date || "Aug 2026"}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                            {c.status || "ACTIVE"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          <div>
+                            <p className="font-medium text-slate-800 dark:text-slate-200">
+                              {c.full_name}
+                            </p>
+                            <p className="text-xs font-mono text-slate-400">
+                              {c.customer_code || c.id}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
+                        {c.phone_number || "—"}
+                      </td>
+                      <td className="px-5 py-3.5 font-medium text-teal-600 dark:text-teal-400">
+                        {c.batch_name || "Palagara Seetu"}
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
+                        {c.group_name || "North Zone A"}
+                      </td>
+                      <td className="px-5 py-3.5 text-xs text-slate-500 dark:text-slate-400">
+                        {c.joining_date || "Aug 2026"}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                          {c.status || "ACTIVE"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-[#121212]">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xl dark:border-slate-800/50 dark:bg-[#121212] max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Enroll New Customer / Member
             </h3>

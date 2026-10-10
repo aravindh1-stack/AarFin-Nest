@@ -92,7 +92,45 @@ export default function ReportsPage() {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* MOBILE TRANSACTIONS (Visible only on mobile screens < md) */}
+          <div className="divide-y divide-slate-100 p-3 md:hidden dark:divide-slate-800/50">
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonBlock key={i} className="my-2 h-16 w-full rounded-xl" />
+              ))
+            ) : payments.length === 0 ? (
+              <p className="py-8 text-center text-xs text-slate-500">
+                No payment transactions found in database.
+              </p>
+            ) : (
+              payments.map((p, index) => (
+                <div key={p.id || index} className="flex items-center justify-between py-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-900 dark:text-white text-xs truncate">
+                      {p.customer_id || p.member_name || "Customer Account"}
+                    </p>
+                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
+                      <span className="font-mono">
+                        {p.id ? String(p.id).slice(0, 8) : `#PAY-${index + 1}`}
+                      </span>
+                      <span>•</span>
+                      <span>{p.payment_method || "CASH"}</span>
+                      <span>•</span>
+                      <span>
+                        {p.payment_date ? new Date(p.payment_date).toLocaleDateString("en-IN") : "Recent"}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="shrink-0 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    ₹{Number(p.amount || p.amount_paid || 0).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* DESKTOP TABLE (Visible md and above) */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50/80 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
                 <tr>

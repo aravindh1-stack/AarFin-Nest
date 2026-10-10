@@ -257,13 +257,13 @@ export function CollectionsHub() {
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex overflow-x-auto pb-1 sm:pb-0 gap-2 no-scrollbar">
           {filters.map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
                 filter === f
                   ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
                   : "border border-slate-200/80 text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800/50 dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
@@ -275,7 +275,83 @@ export function CollectionsHub() {
         </div>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 dark:border-slate-800/50 dark:bg-[#121212]/70">
+      {/* MOBILE MEMBER CARDS (Visible only on mobile screens < md) */}
+      <div className="mt-4 space-y-3 md:hidden">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonBlock key={i} className="h-36 w-full rounded-2xl" />
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-8 text-center text-xs text-slate-500 dark:border-slate-800/50 dark:bg-[#121212]/70">
+            No members match this search.
+          </div>
+        ) : (
+          filtered.map((member) => (
+            <div
+              key={member.id}
+              onClick={() => setSelected(member)}
+              className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition active:scale-[0.99] dark:border-slate-800/60 dark:bg-[#121212] cursor-pointer"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-xs font-bold text-white shadow-sm">
+                    {member.initials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-slate-900 dark:text-white text-sm">
+                      {member.name}
+                    </p>
+                    <p className="text-[11px] font-mono text-slate-400">
+                      {member.id}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="shrink-0 text-right">
+                  {member.totalPendingDues > 0 ? (
+                    <span className="inline-block rounded-lg bg-rose-500/10 px-2 py-0.5 text-xs font-extrabold text-rose-600 dark:text-rose-400">
+                      {formatCurrency(member.totalPendingDues)} Due
+                    </span>
+                  ) : member.advanceBalance > 0 ? (
+                    <span className="inline-block rounded-lg bg-emerald-500/10 px-2 py-0.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                      +{formatCurrency(member.advanceBalance)} Adv
+                    </span>
+                  ) : (
+                    <span className="inline-block rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-white/5 dark:text-slate-400">
+                      Clear
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Scheme & Route Tags */}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span className="rounded-md border border-teal-500/20 bg-teal-500/10 px-2 py-0.5 font-semibold text-teal-700 dark:text-teal-300">
+                  {member.scheme}
+                </span>
+                <span className="text-slate-400">•</span>
+                <span className="text-slate-600 dark:text-slate-400">
+                  {member.route}
+                </span>
+              </div>
+
+              {/* Action Button */}
+              <div className="mt-3 border-t border-slate-100 pt-2.5 dark:border-slate-800/50">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-xl bg-teal-700/10 px-3 py-2 text-xs font-bold text-teal-700 transition hover:bg-teal-700 hover:text-white dark:bg-teal-400/10 dark:text-teal-300 dark:hover:bg-teal-500 dark:hover:text-slate-900"
+                >
+                  <span>Collect Payment & Ledger</span>
+                  <span className="text-sm">→</span>
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* DESKTOP / TABLET TABLE (Visible md and above) */}
+      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 md:block dark:border-slate-800/50 dark:bg-[#121212]/70">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50/80 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">

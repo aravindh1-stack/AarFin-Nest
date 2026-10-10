@@ -68,12 +68,19 @@ export function DashboardSidebar() {
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl lg:flex dark:border-slate-800/50 dark:bg-[#000000]/90">
       <div className="flex h-16 items-center gap-3 border-b border-slate-200/70 px-5 dark:border-slate-800/50">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-emerald-700 shadow-lg shadow-teal-500/20">
-            <span className="text-sm font-bold text-white">N</span>
+          <img
+            src="/nexfix-logo.png"
+            alt="NexFix Logo"
+            className="h-9 w-9 rounded-xl object-contain shadow-md shadow-teal-500/20"
+          />
+          <div className="flex flex-col">
+            <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-none">
+              NexFix
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400 mt-1">
+              AarFin Nest
+            </span>
           </div>
-          <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-            NexFix
-          </span>
         </Link>
       </div>
 

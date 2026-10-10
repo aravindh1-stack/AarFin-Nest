@@ -85,22 +85,27 @@ export function MemberDrawer({
       >
         {member && (
           <>
-            <div className="flex items-start justify-between border-b border-slate-200/70 px-6 py-5 dark:border-slate-800/50">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-sm font-bold text-white">
+            {/* Mobile drag handle indicator */}
+            <div className="pt-2.5 pb-0 flex justify-center sm:hidden">
+              <div className="h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700" />
+            </div>
+
+            <div className="flex items-start justify-between border-b border-slate-200/70 px-4 py-4 sm:px-6 sm:py-5 dark:border-slate-800/50">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-sm font-bold text-white shadow-sm">
                   {member.initials}
                 </div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                <div className="min-w-0">
+                  <h2 className="truncate text-base font-bold text-slate-900 dark:text-white">
                     {member.name}
                   </h2>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
                     <span className="font-bold uppercase text-teal-600 dark:text-teal-400">
                       {(member as any).frequencyType || "WEEKLY"}
                     </span>
                     <span className="text-slate-300 dark:text-slate-700">•</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      Fixed Cycle Amt: {formatCurrency((member as any).installmentAmount || member.installments?.[0]?.amount || 200)}
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      Cycle: {formatCurrency((member as any).installmentAmount || member.installments?.[0]?.amount || 200)}
                     </span>
                   </div>
                 </div>
@@ -109,7 +114,7 @@ export function MemberDrawer({
                 type="button"
                 onClick={onClose}
                 aria-label="Close panel"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-slate-50 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:border-slate-800/60 dark:bg-white/5 dark:hover:text-white cursor-pointer"
               >
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                   <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94Z" />
@@ -297,18 +302,25 @@ export function MemberDrawer({
                         key={pay.id || Math.random()}
                         className="flex items-center justify-between rounded-xl border border-slate-200/70 bg-slate-50/50 p-3 text-xs dark:border-slate-800/50 dark:bg-white/[0.02]"
                       >
-                        <div>
-                          <p className="font-mono font-bold text-teal-600 dark:text-teal-400">
-                            {pay.receipt_no || pay.receipt_number || "REC-CONFIRMED"}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            {pay.notes || pay.payment_method || "Field Collection"}
-                          </p>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                            {pay.payment_date?.split("T")[0] || "Today"} · {pay.payment_method || "CASH"}
-                          </p>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img
+                            src="/nexfix-logo.png"
+                            alt="NexFix"
+                            className="h-7 w-7 rounded-lg object-contain shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-mono font-bold text-teal-600 dark:text-teal-400 truncate">
+                              {pay.receipt_no || pay.receipt_number || "REC-CONFIRMED"}
+                            </p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                              {pay.notes || pay.payment_method || "Field Collection"}
+                            </p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                              {pay.payment_date?.split("T")[0] || "Today"} · {pay.payment_method || "CASH"}
+                            </p>
+                          </div>
                         </div>
-                        <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                        <span className="shrink-0 font-mono text-sm font-bold text-slate-900 dark:text-white">
                           {formatCurrency(Number(pay.amount_paid || pay.amount || 0))}
                         </span>
                       </div>

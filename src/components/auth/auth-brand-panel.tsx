@@ -21,12 +21,19 @@ export function AuthBrandPanel() {
       </div>
 
       <div className="relative flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-          <span className="text-sm font-bold text-white">N</span>
+        <img
+          src="/nexfix-logo.png"
+          alt="NexFix Logo"
+          className="h-10 w-10 rounded-xl object-contain shadow-lg shadow-teal-500/20"
+        />
+        <div className="flex flex-col">
+          <span className="text-xl font-bold tracking-tight text-white leading-none">
+            NexFix
+          </span>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-300 mt-1">
+            AarFin Nest OS
+          </span>
         </div>
-        <span className="text-lg font-bold tracking-tight text-white">
-          NexFix
-        </span>
       </div>
 
       <div className="relative">

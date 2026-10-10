@@ -14,12 +14,19 @@ export default function SignUpPage() {
       <div className="flex flex-1 items-center justify-center px-4 py-16 sm:px-6">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-emerald-700 shadow-lg shadow-teal-500/20">
-              <span className="text-sm font-bold text-white">N</span>
+            <img
+              src="/nexfix-logo.png"
+              alt="NexFix Logo"
+              className="h-10 w-10 rounded-xl object-contain shadow-md shadow-teal-500/20"
+            />
+            <div className="flex flex-col">
+              <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-none">
+                NexFix
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400 mt-1">
+                AarFin Nest
+              </span>
             </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-              NexFix
-            </span>
           </div>
 
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">

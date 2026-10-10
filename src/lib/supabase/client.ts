@@ -19,8 +19,8 @@ export function setLocalDB<T>(key: string, data: T[]): void {
   }
 }
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE_ROLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export const supabase = {
   from(table: string) {
@@ -29,8 +29,8 @@ export const supabase = {
         try {
           const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(query)}`, {
             headers: {
-              'apikey': SERVICE_ROLE_KEY,
-              'Authorization': `Bearer ${SERVICE_ROLE_KEY}`
+              'apikey': ANON_KEY,
+              'Authorization': `Bearer ${ANON_KEY}`
             }
           });
           if (!res.ok) {
@@ -76,8 +76,8 @@ export const supabase = {
           fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
             method: 'POST',
             headers: {
-              'apikey': SERVICE_ROLE_KEY,
-              'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+              'apikey': ANON_KEY,
+              'Authorization': `Bearer ${ANON_KEY}`,
               'Content-Type': 'application/json',
               'Prefer': 'return=minimal'
             },
@@ -106,8 +106,8 @@ export const supabase = {
             fetch(`${SUPABASE_URL}/rest/v1/${table}?${column}=eq.${encodeURIComponent(value)}`, {
               method: 'PATCH',
               headers: {
-                'apikey': SERVICE_ROLE_KEY,
-                'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+                'apikey': ANON_KEY,
+                'Authorization': `Bearer ${ANON_KEY}`,
                 'Content-Type': 'application/json',
                 'Prefer': 'return=minimal'
               },
@@ -125,8 +125,8 @@ export const supabase = {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
         method: 'POST',
         headers: {
-          'apikey': SERVICE_ROLE_KEY,
-          'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+          'apikey': ANON_KEY,
+          'Authorization': `Bearer ${ANON_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(params)

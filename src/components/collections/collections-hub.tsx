@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { members as mockMembers, type Member } from "@/lib/mock-members";
 import { MemberDrawer } from "@/components/collections/member-drawer";
 import { SkeletonBlock } from "@/components/skeleton-block";
@@ -257,21 +258,31 @@ export function CollectionsHub() {
           />
         </div>
 
-        <div className="flex overflow-x-auto pb-1 sm:pb-0 gap-2 no-scrollbar">
-          {filters.map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                filter === f
-                  ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
-                  : "border border-slate-200/80 text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800/50 dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+          <div className="flex gap-2">
+            {filters.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                  filter === f
+                    ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
+                    : "border border-slate-200/80 text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800/50 dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          <Link
+            href="/mobile"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-slate-900/90 px-3.5 py-1.5 text-xs font-bold text-[#00e676] shadow-sm hover:border-[#00e676] transition-all ml-auto"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-[#00e676] animate-pulse" />
+            Field Mobile View
+          </Link>
         </div>
       </div>
 

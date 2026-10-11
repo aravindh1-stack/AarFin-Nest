@@ -22,19 +22,16 @@ export function RouteProgress() {
           const items: RouteItem[] = gRes.map((g: any, index: number) => ({
             id: g.id || String(index),
             name: g.group_name || `Route ${index + 1}`,
-            collected: g.collection_percentage || Math.floor(Math.random() * 40) + 60,
-            agent: g.agent_name || "Field Agent",
+            collected: Number(g.collection_percentage) || 0,
+            agent: g.collection_agent || g.agent_name || "Field Agent",
           }));
           setRoutes(items);
         } else {
-          setRoutes([
-            { id: "1", name: "North Zone A", collected: 82, agent: "Boopathy R." },
-            { id: "2", name: "East Route 4", collected: 64, agent: "Divya S." },
-            { id: "3", name: "Central Hub", collected: 91, agent: "Manoj K." },
-          ]);
+          setRoutes([]);
         }
       } catch (err) {
         console.error("Error fetching route progress:", err);
+        setRoutes([]);
       } finally {
         setLoading(false);
       }
@@ -57,6 +54,10 @@ export function RouteProgress() {
       <div className="space-y-4">
         {loading ? (
           <p className="py-4 text-center text-xs text-slate-500">Loading routes...</p>
+        ) : routes.length === 0 ? (
+          <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+            No route groups registered in database.
+          </p>
         ) : (
           routes.map((route) => (
             <div key={route.id}>

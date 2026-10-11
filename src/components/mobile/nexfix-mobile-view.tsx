@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -8,16 +8,9 @@ import {
   Plus,
   Search,
   ArrowUpRight,
-  ArrowDownRight,
-  TrendingUp,
-  Phone,
-  MessageCircle,
-  CheckCircle2,
-  AlertCircle,
   Clock,
   Calendar,
   ChevronRight,
-  Filter,
   Check,
   X,
   CreditCard,
@@ -26,19 +19,22 @@ import {
   Sparkles,
   Smartphone,
   Maximize2,
-  RotateCcw,
   LayoutDashboard,
   HandCoins,
   Users,
   FileBarChart,
-  ShieldCheck,
   MapPin,
   ArrowRight,
-  Volume2,
   Wifi,
   BatteryCharging,
-  SlidersHorizontal,
+  Phone,
+  MessageCircle,
+  CheckCircle2,
+  AlertCircle,
+  Database,
+  RefreshCw,
 } from "lucide-react";
+import { SkeletonBlock } from "@/components/skeleton-block";
 
 // Types
 export interface PriorityCustomer {
@@ -56,127 +52,35 @@ export interface PriorityCustomer {
   installmentCycle: number;
 }
 
-// Initial Mock High-Priority Collections
-const INITIAL_CUSTOMERS: PriorityCustomer[] = [
-  {
-    id: "mem-01",
-    name: "Arun Kumar",
-    initials: "AK",
-    phone: "+91 98765 43210",
-    scheme: "Palagara Seetu (₹5k/mo)",
-    route: "North Zone A • Stop 04",
-    amountDue: 5000,
-    dueDate: "Today, 5:00 PM",
-    status: "TODAY",
-    installmentCycle: 4,
-    lastPayment: "05 Mar 2026 (₹2,000 partial)",
-  },
-  {
-    id: "mem-02",
-    name: "Meena Devi",
-    initials: "MD",
-    phone: "+91 91234 56780",
-    scheme: "Vaara Kandhu (₹1.2k/wk)",
-    route: "East Route 4 • Stop 11",
-    amountDue: 2400,
-    dueDate: "2 Days Overdue",
-    status: "OVERDUE",
-    urgencyDays: 2,
-    installmentCycle: 10,
-    lastPayment: "29 Jul 2026 (Full)",
-  },
-  {
-    id: "mem-03",
-    name: "Murugan Selvam",
-    initials: "MS",
-    phone: "+91 94432 11098",
-    scheme: "Daily Chitti (₹500/day)",
-    route: "North Zone A • Stop 02",
-    amountDue: 1500,
-    dueDate: "Today, 2:30 PM",
-    status: "TODAY",
-    installmentCycle: 18,
-    lastPayment: "Yesterday (₹500 cash)",
-  },
-  {
-    id: "mem-04",
-    name: "Kavitha Rajan",
-    initials: "KR",
-    phone: "+91 97890 23451",
-    scheme: "Monthly Gold Seetu",
-    route: "Town Centre • Stop 08",
-    amountDue: 10000,
-    dueDate: "4 Days Overdue",
-    status: "OVERDUE",
-    urgencyDays: 4,
-    installmentCycle: 7,
-    lastPayment: "12 Feb 2026",
-  },
-  {
-    id: "mem-05",
-    name: "Priya Lakshmi",
-    initials: "PL",
-    phone: "+91 93445 67812",
-    scheme: "Vaara Kandhu (₹2k/wk)",
-    route: "South Market • Stop 15",
-    amountDue: 4000,
-    dueDate: "Tomorrow Morning",
-    status: "UPCOMING",
-    installmentCycle: 9,
-    lastPayment: "28 Sep 2026",
-  },
-  {
-    id: "mem-06",
-    name: "Vigneshwaran P.",
-    initials: "VP",
-    phone: "+91 98401 77321",
-    scheme: "Palagara Seetu (₹5k/mo)",
-    route: "North Zone A • Stop 07",
-    amountDue: 5000,
-    dueDate: "Today, 6:30 PM",
-    status: "TODAY",
-    installmentCycle: 5,
-    lastPayment: "05 Aug 2026",
-  },
-];
-
 export function NexFixMobileView() {
   // View mode for desktop testing (Phone Frame vs Fluid Responsive)
   const [deviceMode, setDeviceMode] = useState<"phone" | "fluid">("phone");
-  
+
   // Navigation active tab: "overview" | "collect" | "customers" | "reports"
   const [activeTab, setActiveTab] = useState<"overview" | "collect" | "customers" | "reports">("overview");
 
-  // State
-  const [customers, setCustomers] = useState<PriorityCustomer[]>(INITIAL_CUSTOMERS);
+  // Live Database State
+  const [customers, setCustomers] = useState<PriorityCustomer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "TODAY" | "OVERDUE" | "COLLECTED">("ALL");
-  
+
   // Modals & Panels
   const [quickCollectOpen, setQuickCollectOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<PriorityCustomer | null>(null);
   const [collectAmount, setCollectAmount] = useState<number>(5000);
   const [paymentMode, setPaymentMode] = useState<"CASH" | "UPI" | "BANK">("CASH");
   const [paymentNotes, setPaymentNotes] = useState("");
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Header slideouts
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Dynamic Stats
-  const totalCollectionsToday = useMemo(() => {
-    const collected = customers
-      .filter((c) => c.status === "COLLECTED")
-      .reduce((sum, c) => sum + c.amountDue, 48500);
-    return collected;
-  }, [customers]);
-
-  const totalPendingDues = useMemo(() => {
-    return customers
-      .filter((c) => c.status !== "COLLECTED")
-      .reduce((sum, c) => sum + c.amountDue, 96100);
-  }, [customers]);
+  // Raw Database Records
+  const [rawPayments, setRawPayments] = useState<any[]>([]);
+  const [batchesList, setBatchesList] = useState<any[]>([]);
 
   // Toast notification helper
   const showToast = (msg: string) => {
@@ -185,6 +89,114 @@ export function NexFixMobileView() {
       setToastMessage(null);
     }, 3500);
   };
+
+  // Fetch strictly from Database API
+  const loadDatabaseData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [custRes, batchRes, payRes] = await Promise.all([
+        fetch("/api/customers").then((r) => r.json()),
+        fetch("/api/batches").then((r) => r.json()),
+        fetch("/api/payments").then((r) => r.json()),
+      ]);
+
+      const customersFromDb = Array.isArray(custRes) ? custRes : [];
+      const batchesFromDb = Array.isArray(batchRes) ? batchRes : [];
+      const paymentsFromDb = Array.isArray(payRes) ? payRes : [];
+
+      setBatchesList(batchesFromDb);
+      setRawPayments(paymentsFromDb);
+
+      if (customersFromDb.length === 0) {
+        setCustomers([]);
+        return;
+      }
+
+      // Map DB customer data to PriorityCustomer items
+      const mapped: PriorityCustomer[] = customersFromDb.map((c: any) => {
+        const initials = c.full_name
+          ? c.full_name
+              .split(" ")
+              .map((n: string) => n[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2)
+          : "CU";
+
+        const batch =
+          batchesFromDb.find(
+            (b: any) =>
+              (c.batch_id && (b.id === c.batch_id || b.batch_code === c.batch_id)) ||
+              (c.batch_name &&
+                (b.batch_name?.toLowerCase() === c.batch_name.toLowerCase() ||
+                  b.batch_code?.toLowerCase() === c.batch_name.toLowerCase()))
+          ) ||
+          batchesFromDb[0] ||
+          null;
+
+        const instAmt = Number(batch?.installment_amount || c.installment_amount || 0);
+
+        // Filter payments for this customer
+        const memberPayments = paymentsFromDb.filter(
+          (p: any) =>
+            p.customer_id === c.id ||
+            p.customer_id === c.customer_code ||
+            (p.customer_name &&
+              c.full_name &&
+              p.customer_name.toLowerCase() === c.full_name.toLowerCase())
+        );
+
+        const totalPaidSum = memberPayments.reduce(
+          (acc: number, curr: any) => acc + (Number(curr.amount_paid || curr.amount) || 0),
+          0
+        );
+
+        const lastPaymentRecord = memberPayments[memberPayments.length - 1];
+        const lastPaymentText = lastPaymentRecord
+          ? `₹${Number(lastPaymentRecord.amount_paid || lastPaymentRecord.amount || 0).toLocaleString("en-IN")} via ${lastPaymentRecord.payment_method || "CASH"}`
+          : "No payments yet";
+
+        const hasPaidCurrent = totalPaidSum >= (instAmt || 1);
+        const amountDue = instAmt > 0 ? Math.max(0, instAmt - (totalPaidSum % instAmt || 0)) : 0;
+
+        return {
+          id: c.id,
+          name: c.full_name || "Customer",
+          initials,
+          phone: c.phone_number || c.phone || "No phone",
+          scheme: c.batch_name || batch?.batch_name || "General Scheme",
+          route: c.group_name || c.route || "Default Route",
+          amountDue,
+          dueDate: "Current Cycle",
+          status: hasPaidCurrent && amountDue === 0 ? "COLLECTED" : "TODAY",
+          installmentCycle: memberPayments.length + 1,
+          lastPayment: lastPaymentText,
+        };
+      });
+
+      setCustomers(mapped);
+    } catch (err) {
+      console.error("Error fetching live database records:", err);
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDatabaseData();
+  }, [loadDatabaseData]);
+
+  // Dynamic Live Stats from Database
+  const totalCollectionsToday = useMemo(() => {
+    return rawPayments.reduce((sum, item) => sum + (Number(item.amount_paid || item.amount) || 0), 0);
+  }, [rawPayments]);
+
+  const totalPendingDues = useMemo(() => {
+    return customers
+      .filter((c) => c.status !== "COLLECTED")
+      .reduce((sum, c) => sum + c.amountDue, 0);
+  }, [customers]);
 
   // Filtered customer list
   const filteredCustomers = useMemo(() => {
@@ -207,39 +219,52 @@ export function NexFixMobileView() {
   // Open Collect Modal for a specific customer
   const handleOpenCollect = (cust: PriorityCustomer) => {
     setSelectedCustomer(cust);
-    setCollectAmount(cust.amountDue);
+    setCollectAmount(cust.amountDue > 0 ? cust.amountDue : 1000);
     setQuickCollectOpen(true);
   };
 
   // Open FAB Quick Collect
   const handleOpenFAB = () => {
-    const defaultCust = customers.find((c) => c.status !== "COLLECTED") || customers[0];
+    const defaultCust = customers.find((c) => c.status !== "COLLECTED") || customers[0] || null;
     setSelectedCustomer(defaultCust);
-    setCollectAmount(defaultCust ? defaultCust.amountDue : 5000);
+    setCollectAmount(defaultCust && defaultCust.amountDue > 0 ? defaultCust.amountDue : 1000);
     setQuickCollectOpen(true);
   };
 
-  // Submit payment
-  const handleRecordPayment = (e: React.FormEvent) => {
+  // Submit payment to real DB API
+  const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCustomer) return;
 
-    // Update customer status to collected
-    setCustomers((prev) =>
-      prev.map((c) =>
-        c.id === selectedCustomer.id
-          ? {
-              ...c,
-              status: "COLLECTED",
-              amountDue: Math.max(0, c.amountDue - collectAmount),
-              lastPayment: `Just now (₹${collectAmount.toLocaleString("en-IN")} via ${paymentMode})`,
-            }
-          : c
-      )
-    );
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          receipt_no: `RCP-${Date.now().toString().slice(-6)}`,
+          customer_id: selectedCustomer.id,
+          amount_paid: collectAmount,
+          payment_method: paymentMode,
+          notes: paymentNotes || "Mobile Field Collection",
+          payment_date: new Date().toISOString(),
+        }),
+      });
 
-    setQuickCollectOpen(false);
-    showToast(`✓ Received ₹${collectAmount.toLocaleString("en-IN")} from ${selectedCustomer.name} (${paymentMode})`);
+      if (!res.ok) {
+        throw new Error("Failed to record payment in database");
+      }
+
+      setQuickCollectOpen(false);
+      setPaymentNotes("");
+      showToast(`✓ Recorded ₹${collectAmount.toLocaleString("en-IN")} for ${selectedCustomer.name}`);
+      await loadDatabaseData();
+    } catch (err: any) {
+      console.error("Error saving payment:", err);
+      showToast(`Error: ${err.message || "Failed to record payment"}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -264,16 +289,26 @@ export function NexFixMobileView() {
                   <span className="text-base font-bold tracking-tight text-white group-hover:text-[#00e676] transition-colors">
                     NexFix Mobile
                   </span>
-                  <span className="rounded-full bg-[#00e676]/15 px-2 py-0.5 text-[10px] font-semibold text-[#00e676] border border-[#00e676]/30">
-                    FIELD V2
+                  <span className="rounded-full bg-[#00e676]/15 px-2 py-0.5 text-[10px] font-semibold text-[#00e676] border border-[#00e676]/30 flex items-center gap-1">
+                    <Database className="h-2.5 w-2.5" />
+                    LIVE DB
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">AarFin Nest Neo-Finance Agent Suite</p>
+                <p className="text-[11px] text-slate-400">AarFin Nest Live Database Suite</p>
               </div>
             </Link>
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => loadDatabaseData()}
+              className="flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-700/60 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white"
+              title="Refresh DB Data"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Sync DB</span>
+            </button>
+
             {/* Mode switch for testing view */}
             <div className="hidden sm:flex items-center rounded-xl bg-slate-900/90 p-1 border border-slate-800">
               <button
@@ -324,7 +359,6 @@ export function NexFixMobileView() {
         >
           {/* Mobile Screen Shell */}
           <div className="relative flex min-h-[880px] flex-col bg-[#0f172a] text-slate-100 pb-28">
-            
             {/* Top iOS / Hardware Status Bar */}
             <div className="sticky top-0 z-40 bg-[#0f172a]/90 backdrop-blur-md px-6 pt-3 pb-1 flex items-center justify-between text-xs font-medium text-slate-300 select-none">
               <div className="font-semibold tracking-wider text-slate-200">09:41</div>
@@ -357,10 +391,10 @@ export function NexFixMobileView() {
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] font-medium tracking-wide uppercase text-slate-400">
-                        Field Ops • North
+                        Field Ops • Database
                       </span>
                       <span className="inline-block h-1 w-1 rounded-full bg-[#00e676]" />
-                      <span className="text-[10px] font-semibold text-[#00e676]">Live Route</span>
+                      <span className="text-[10px] font-semibold text-[#00e676]">Connected</span>
                     </div>
                     <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
                       Sundar Kumar
@@ -381,7 +415,6 @@ export function NexFixMobileView() {
                   >
                     <Bell className="h-4.5 w-4.5 text-slate-200" />
                     <span className="absolute top-2 right-2 flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00e676] opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00e676] shadow-[0_0_6px_#00e676]" />
                     </span>
                   </button>
@@ -401,11 +434,13 @@ export function NexFixMobileView() {
               <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-800/50 border border-slate-800 px-3 py-2 text-xs text-slate-300">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-3.5 w-3.5 text-[#00e676]" />
-                  <span>North Zone Route A</span>
+                  <span>
+                    {batchesList.length > 0 ? `${batchesList[0].batch_name} Batch` : "Live Collection Route"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-slate-400">
                   <Calendar className="h-3 w-3 text-slate-400" />
-                  <span>Today, 11 Oct</span>
+                  <span>{new Date().toLocaleDateString("en-IN", { month: "short", day: "numeric" })}</span>
                 </div>
               </div>
             </div>
@@ -416,12 +451,11 @@ export function NexFixMobileView() {
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                   <div className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-[#00e676]" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Field Alerts</span>
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                      Database Telemetry
+                    </span>
                   </div>
-                  <button
-                    onClick={() => setNotificationsOpen(false)}
-                    className="text-slate-400 hover:text-white"
-                  >
+                  <button onClick={() => setNotificationsOpen(false)} className="text-slate-400 hover:text-white">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -429,17 +463,10 @@ export function NexFixMobileView() {
                   <div className="flex gap-2.5 rounded-xl bg-slate-800/60 p-2.5 border border-slate-700/40">
                     <div className="h-2 w-2 rounded-full bg-[#00e676] mt-1 shrink-0" />
                     <div>
-                      <p className="font-semibold text-slate-200">Daily Target 68% Reached</p>
-                      <p className="text-[11px] text-slate-400">₹48,500 collected of ₹71,000 target for North Zone A.</p>
-                      <span className="text-[10px] text-slate-500">12m ago</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2.5 rounded-xl bg-slate-800/60 p-2.5 border border-slate-700/40">
-                    <div className="h-2 w-2 rounded-full bg-amber-400 mt-1 shrink-0" />
-                    <div>
-                      <p className="font-semibold text-slate-200">Meena Devi Due Alert</p>
-                      <p className="text-[11px] text-slate-400">Installment cycle #10 has been overdue by 2 days.</p>
-                      <span className="text-[10px] text-slate-500">45m ago</span>
+                      <p className="font-semibold text-slate-200">Supabase Connected</p>
+                      <p className="text-[11px] text-slate-400">
+                        {customers.length} registered members, {rawPayments.length} transactions logged.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -460,18 +487,14 @@ export function NexFixMobileView() {
                 </div>
                 <div className="mt-3 space-y-2 text-xs">
                   <div className="flex items-center justify-between py-1.5">
-                    <span className="text-slate-300">Offline Collection Queue</span>
+                    <span className="text-slate-300">Database Sync</span>
                     <span className="text-[10px] font-semibold text-[#00e676] bg-[#00e676]/15 px-2 py-0.5 rounded-full">
-                      ENABLED (Auto-sync)
+                      CONNECTED
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-1.5 border-t border-slate-800">
-                    <span className="text-slate-300">Sound on Receipt Confirmation</span>
-                    <span className="text-[10px] font-semibold text-slate-400">CHIME ON</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-t border-slate-800">
-                    <span className="text-slate-300">Printer / SMS Gateway</span>
-                    <span className="text-[10px] font-semibold text-emerald-400">WhatsApp Direct</span>
+                    <span className="text-slate-300">Mock Data Policy</span>
+                    <span className="text-[10px] font-semibold text-emerald-400">DISABLED (0 MOCK)</span>
                   </div>
                 </div>
               </div>
@@ -482,14 +505,13 @@ export function NexFixMobileView() {
               <div className="grid grid-cols-2 gap-3">
                 {/* 1. Collections Stat Card */}
                 <div className="relative overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-xl p-3.5 shadow-[0_8px_30px_rgb(0,0,0,0.3)] transition-all hover:border-[#00e676]/40 hover:shadow-[0_0_20px_rgba(0,230,118,0.15)] group">
-                  {/* Subtle Top Inner Edge Highlight */}
                   <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#00e676]/50 to-transparent" />
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-medium tracking-wide text-slate-400">Collections</span>
                     <span className="flex items-center gap-0.5 rounded-full bg-[#00e676]/15 px-1.5 py-0.5 text-[10px] font-bold text-[#00e676] border border-[#00e676]/30">
                       <ArrowUpRight className="h-2.5 w-2.5" />
-                      +18.4%
+                      Live
                     </span>
                   </div>
 
@@ -498,9 +520,11 @@ export function NexFixMobileView() {
                       ₹{totalCollectionsToday.toLocaleString("en-IN")}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400">Today&apos;s realized cash</p>
+                  <p className="text-[10px] text-slate-400">
+                    {rawPayments.length} recorded payments
+                  </p>
 
-                  {/* Mini SVG Sparkline Trend Line (Collections Upward) */}
+                  {/* Mini SVG Sparkline Trend Line */}
                   <div className="mt-2 h-9 w-full">
                     <svg viewBox="0 0 100 32" className="h-full w-full overflow-visible" preserveAspectRatio="none">
                       <defs>
@@ -509,36 +533,32 @@ export function NexFixMobileView() {
                           <stop offset="100%" stopColor="#00e676" stopOpacity="0.0" />
                         </linearGradient>
                       </defs>
-                      {/* Area Fill */}
                       <path
-                        d="M 0 28 Q 18 24, 30 18 T 55 14 T 75 8 T 100 2 L 100 32 L 0 32 Z"
+                        d="M 0 28 Q 25 24, 45 18 T 75 10 T 100 4 L 100 32 L 0 32 Z"
                         fill="url(#neonGreenGradient)"
                       />
-                      {/* Stroke Line */}
                       <path
-                        d="M 0 28 Q 18 24, 30 18 T 55 14 T 75 8 T 100 2"
+                        d="M 0 28 Q 25 24, 45 18 T 75 10 T 100 4"
                         fill="none"
                         stroke="#00e676"
                         strokeWidth="2.2"
                         strokeLinecap="round"
                         filter="drop-shadow(0 0 4px #00e676)"
                       />
-                      {/* Active end point */}
-                      <circle cx="100" cy="2" r="2.8" fill="#ffffff" stroke="#00e676" strokeWidth="2" />
+                      <circle cx="100" cy="4" r="2.8" fill="#ffffff" stroke="#00e676" strokeWidth="2" />
                     </svg>
                   </div>
                 </div>
 
                 {/* 2. Pending Dues Stat Card */}
                 <div className="relative overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-xl p-3.5 shadow-[0_8px_30px_rgb(0,0,0,0.3)] transition-all hover:border-amber-400/30 hover:shadow-[0_0_20px_rgba(251,191,36,0.1)] group">
-                  {/* Subtle Top Inner Edge Highlight */}
                   <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-medium tracking-wide text-slate-400">Pending Dues</span>
                     <span className="flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400 border border-amber-400/30">
                       <Clock className="h-2.5 w-2.5" />
-                      {customers.filter((c) => c.status !== "COLLECTED").length} Dues
+                      {customers.filter((c) => c.status !== "COLLECTED").length}
                     </span>
                   </div>
 
@@ -547,9 +567,9 @@ export function NexFixMobileView() {
                       ₹{totalPendingDues.toLocaleString("en-IN")}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400">On-field open cycle</p>
+                  <p className="text-[10px] text-slate-400">Calculated from DB ledger</p>
 
-                  {/* Mini SVG Sparkline Trend Line (Pending Dues Controlled) */}
+                  {/* Mini SVG Sparkline Trend Line */}
                   <div className="mt-2 h-9 w-full">
                     <svg viewBox="0 0 100 32" className="h-full w-full overflow-visible" preserveAspectRatio="none">
                       <defs>
@@ -558,40 +578,53 @@ export function NexFixMobileView() {
                           <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
                         </linearGradient>
                       </defs>
-                      {/* Area Fill */}
                       <path
-                        d="M 0 8 Q 22 10, 40 18 T 65 14 T 82 22 T 100 24 L 100 32 L 0 32 Z"
+                        d="M 0 10 Q 30 14, 55 20 T 80 22 T 100 25 L 100 32 L 0 32 Z"
                         fill="url(#amberGradient)"
                       />
-                      {/* Stroke Line */}
                       <path
-                        d="M 0 8 Q 22 10, 40 18 T 65 14 T 82 22 T 100 24"
+                        d="M 0 10 Q 30 14, 55 20 T 80 22 T 100 25"
                         fill="none"
                         stroke="#f59e0b"
                         strokeWidth="2.2"
                         strokeLinecap="round"
                         filter="drop-shadow(0 0 3px #f59e0b)"
                       />
-                      {/* Active end point */}
-                      <circle cx="100" cy="24" r="2.8" fill="#ffffff" stroke="#f59e0b" strokeWidth="2" />
+                      <circle cx="100" cy="25" r="2.8" fill="#ffffff" stroke="#f59e0b" strokeWidth="2" />
                     </svg>
                   </div>
                 </div>
               </div>
 
-              {/* Route Progress Progress Bar */}
+              {/* Route Progress Bar */}
               <div className="mt-3 rounded-xl bg-slate-800/40 border border-slate-700/50 p-2.5 backdrop-blur-md">
                 <div className="flex items-center justify-between text-[11px] mb-1.5">
                   <span className="text-slate-300 font-medium flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3 text-[#00e676]" />
-                    Route Target Progress
+                    DB Route Progress
                   </span>
-                  <span className="font-bold text-[#00e676]">74% Completed</span>
+                  <span className="font-bold text-[#00e676]">
+                    {customers.length > 0
+                      ? `${Math.round(
+                          (customers.filter((c) => c.status === "COLLECTED").length /
+                            customers.length) *
+                            100
+                        )}%`
+                      : "0%"}
+                  </span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-slate-700/60 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-[#00e676] shadow-[0_0_10px_#00e676]"
-                    style={{ width: "74%" }}
+                    style={{
+                      width: `${
+                        customers.length > 0
+                          ? (customers.filter((c) => c.status === "COLLECTED").length /
+                              customers.length) *
+                            100
+                          : 0
+                      }%`,
+                    }}
                   />
                 </div>
               </div>
@@ -599,7 +632,6 @@ export function NexFixMobileView() {
 
             {/* SEARCH & FILTER CONTROLS */}
             <div className="px-5 py-2">
-              {/* Search Bar with Glass Effect */}
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
@@ -650,19 +682,33 @@ export function NexFixMobileView() {
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-2">
                     <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                      High-Priority Collections
+                      Database Collections
                     </h2>
                     <span className="rounded-full bg-slate-800 px-2 py-0.2 text-[10px] font-bold text-slate-300">
                       {filteredCustomers.length}
                     </span>
                   </div>
-                  <span className="text-[11px] text-slate-500">FIFO Sorted</span>
+                  <span className="text-[11px] text-slate-500">Live DB Stream</span>
                 </div>
 
-                {/* Collection Cards List */}
-                {filteredCustomers.length === 0 ? (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-400">
-                    <p className="text-xs font-medium">No customers found matching filter.</p>
+                {/* Loading or Empty State */}
+                {loading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <SkeletonBlock key={i} className="h-28 w-full rounded-2xl" />
+                  ))
+                ) : filteredCustomers.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-10 text-center text-slate-400">
+                    <Database className="mx-auto h-8 w-8 text-slate-600 mb-2" />
+                    <p className="text-xs font-bold text-slate-300">No customer records in database</p>
+                    <p className="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto">
+                      Customers registered in your branch will appear here for on-field collections.
+                    </p>
+                    <Link
+                      href="/dashboard/customers"
+                      className="inline-block mt-4 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white shadow-md hover:bg-teal-600 transition"
+                    >
+                      + Add Customer to DB
+                    </Link>
                   </div>
                 ) : (
                   filteredCustomers.map((cust) => {
@@ -681,7 +727,6 @@ export function NexFixMobileView() {
                             : "border-slate-700/60 bg-slate-800/50 shadow-[0_4px_20px_rgba(0,0,0,0.25)] hover:border-[#00e676]/40 hover:shadow-[0_0_15px_rgba(0,230,118,0.12)]"
                         }`}
                       >
-                        {/* Glow on left border for high priority */}
                         <div
                           className={`absolute left-0 top-0 bottom-0 w-1 ${
                             isCollected
@@ -694,7 +739,6 @@ export function NexFixMobileView() {
 
                         {/* Top Row: Avatar, Name, Scheme & Amount Pill */}
                         <div className="flex items-start justify-between gap-2 pl-1.5">
-                          {/* Avatar + Info */}
                           <div className="flex items-center gap-3">
                             <div
                               className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-bold text-xs transition-transform group-hover:scale-105 ${
@@ -754,9 +798,7 @@ export function NexFixMobileView() {
                                   {cust.dueDate}
                                 </span>
                               )}
-                              {isCollected && (
-                                <span className="text-emerald-400">Settled Today</span>
-                              )}
+                              {isCollected && <span className="text-emerald-400">Settled Today</span>}
                               {cust.status === "UPCOMING" && (
                                 <span className="text-slate-400">{cust.dueDate}</span>
                               )}
@@ -766,32 +808,31 @@ export function NexFixMobileView() {
 
                         {/* Bottom Row: Quick Communication & Collect Action */}
                         <div className="mt-3 flex items-center justify-between border-t border-slate-800/80 pt-2.5 pl-1.5">
-                          {/* Fast Contact Buttons */}
                           <div className="flex items-center gap-1.5">
-                            <a
-                              href={`tel:${cust.phone}`}
-                              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 transition-colors"
-                              title={`Call ${cust.name}`}
-                            >
-                              <Phone className="h-3.5 w-3.5" />
-                            </a>
-                            <a
-                              href={`https://wa.me/${cust.phone.replace(/[^0-9]/g, "")}?text=Hello%20${encodeURIComponent(
-                                cust.name
-                              )},%20this%20is%20Sundar%20from%20NexFix%20regarding%20your%20due%20of%20₹${cust.amountDue}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-800/40 transition-colors"
-                              title="WhatsApp Reminder"
-                            >
-                              <MessageCircle className="h-3.5 w-3.5" />
-                            </a>
-                            <span className="text-[10px] text-slate-400 ml-1 hidden sm:inline">
-                              {cust.phone}
-                            </span>
+                            {cust.phone && cust.phone !== "No phone" ? (
+                              <>
+                                <a
+                                  href={`tel:${cust.phone}`}
+                                  className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 transition-colors"
+                                  title={`Call ${cust.name}`}
+                                >
+                                  <Phone className="h-3.5 w-3.5" />
+                                </a>
+                                <a
+                                  href={`https://wa.me/${cust.phone.replace(/[^0-9]/g, "")}?text=Hello%20${encodeURIComponent(
+                                    cust.name
+                                  )},%20this%20is%20Sundar%20from%20NexFix%20regarding%20your%20due%20of%20₹${cust.amountDue}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-800/40 transition-colors"
+                                  title="WhatsApp Reminder"
+                                >
+                                  <MessageCircle className="h-3.5 w-3.5" />
+                                </a>
+                              </>
+                            ) : null}
                           </div>
 
-                          {/* Collect Action Button */}
                           {isCollected ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
                               <Check className="h-3.5 w-3.5" />
@@ -823,7 +864,7 @@ export function NexFixMobileView() {
                     Direct Field Collection Counter
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    Record offline cash, UPI QR scan, or immediate bank reference with FIFO cycle matching.
+                    Record offline cash, UPI QR scan, or immediate bank reference with atomic database persistence.
                   </p>
 
                   <div className="mt-4 space-y-3">
@@ -840,18 +881,14 @@ export function NexFixMobileView() {
 
                     <div className="rounded-xl border border-slate-700/40 bg-slate-900/60 p-3">
                       <span className="text-[11px] font-semibold uppercase text-slate-400">
-                        Today&apos;s Field Reconciliation
+                        Real-time Database Tally
                       </span>
                       <div className="mt-2 flex items-center justify-between text-xs">
-                        <span className="text-slate-300">Cash in Bag:</span>
-                        <span className="font-bold text-white font-mono">₹41,500</span>
-                      </div>
-                      <div className="mt-1 flex items-center justify-between text-xs">
-                        <span className="text-slate-300">UPI Instant Received:</span>
-                        <span className="font-bold text-[#00e676] font-mono">₹7,000</span>
+                        <span className="text-slate-300">Total Transactions:</span>
+                        <span className="font-bold text-white font-mono">{rawPayments.length}</span>
                       </div>
                       <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-                        <span className="font-semibold text-slate-200">Total Field Tally:</span>
+                        <span className="font-semibold text-slate-200">Total Field Realized:</span>
                         <span className="font-extrabold text-[#00e676] font-mono text-sm">
                           ₹{totalCollectionsToday.toLocaleString("en-IN")}
                         </span>
@@ -869,34 +906,40 @@ export function NexFixMobileView() {
                   <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Route Customers ({customers.length})
                   </h2>
-                  <span className="text-[11px] text-[#00e676]">All Synced</span>
+                  <span className="text-[11px] text-[#00e676]">Live Database</span>
                 </div>
 
-                <div className="space-y-2">
-                  {customers.map((c) => (
-                    <div
-                      key={c.id}
-                      onClick={() => handleOpenCollect(c)}
-                      className="flex items-center justify-between rounded-xl border border-slate-700/50 bg-slate-800/40 p-3 backdrop-blur-md cursor-pointer hover:border-slate-600 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-xs font-bold text-[#00e676]">
-                          {c.initials}
+                {customers.length === 0 ? (
+                  <div className="rounded-xl border border-slate-800 p-8 text-center text-xs text-slate-500">
+                    No customers found in database.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {customers.map((c) => (
+                      <div
+                        key={c.id}
+                        onClick={() => handleOpenCollect(c)}
+                        className="flex items-center justify-between rounded-xl border border-slate-700/50 bg-slate-800/40 p-3 backdrop-blur-md cursor-pointer hover:border-slate-600 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-xs font-bold text-[#00e676]">
+                            {c.initials}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">{c.name}</p>
+                            <p className="text-[10px] text-slate-400">{c.phone}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-white">{c.name}</p>
-                          <p className="text-[10px] text-slate-400">{c.phone}</p>
+                        <div className="text-right">
+                          <span className="text-xs font-mono font-bold text-[#00e676]">
+                            ₹{c.amountDue.toLocaleString("en-IN")}
+                          </span>
+                          <p className="text-[10px] text-slate-400">{c.route}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs font-mono font-bold text-[#00e676]">
-                          ₹{c.amountDue.toLocaleString("en-IN")}
-                        </span>
-                        <p className="text-[10px] text-slate-400">{c.route.split("•")[0]}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -909,30 +952,30 @@ export function NexFixMobileView() {
                     Daily Field Settlement
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    Summary ready for evening branch deposit with Sundar Kumar (Admin).
+                    Summary reflecting transactions in database with Sundar Kumar (Admin).
                   </p>
 
                   <div className="mt-4 space-y-2 text-xs">
                     <div className="flex justify-between py-1.5 border-b border-slate-700/40">
-                      <span className="text-slate-400">Total Scheduled Visits</span>
-                      <span className="font-semibold text-white">25 Members</span>
+                      <span className="text-slate-400">Total Enrolled Members</span>
+                      <span className="font-semibold text-white">{customers.length} Members</span>
                     </div>
                     <div className="flex justify-between py-1.5 border-b border-slate-700/40">
-                      <span className="text-slate-400">Successfully Collected</span>
-                      <span className="font-semibold text-[#00e676]">18 Members</span>
+                      <span className="text-slate-400">Collected Transactions</span>
+                      <span className="font-semibold text-[#00e676]">
+                        {customers.filter((c) => c.status === "COLLECTED").length} Members
+                      </span>
                     </div>
                     <div className="flex justify-between py-1.5 border-b border-slate-700/40">
-                      <span className="text-slate-400">Follow-up Needed Tomorrow</span>
-                      <span className="font-semibold text-amber-400">7 Members</span>
-                    </div>
-                    <div className="flex justify-between py-1.5 border-b border-slate-700/40">
-                      <span className="text-slate-400">Realization Rate</span>
-                      <span className="font-bold text-[#00e676]">74.2%</span>
+                      <span className="text-slate-400">Total Cash Value</span>
+                      <span className="font-bold text-[#00e676]">
+                        ₹{totalCollectionsToday.toLocaleString("en-IN")}
+                      </span>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => showToast("✓ Daily PDF Settlement Report Exported")}
+                    onClick={() => showToast("✓ Exporting live branch settlement")}
                     className="mt-4 w-full rounded-xl border border-[#00e676]/40 bg-[#00e676]/15 hover:bg-[#00e676]/25 py-2.5 text-xs font-bold text-[#00e676] transition-colors"
                   >
                     Export Branch Deposit Slip
@@ -941,7 +984,7 @@ export function NexFixMobileView() {
               </div>
             )}
 
-            {/* ACTIONS: FLOATING ACTION BUTTON (FAB) With Neon Green "+" */}
+            {/* ACTIONS: FLOATING ACTION BUTTON (FAB) */}
             <div className="fixed bottom-22 sm:bottom-24 left-0 right-0 z-40 pointer-events-none flex justify-center">
               <div className="w-full max-w-[420px] px-6 flex justify-end pointer-events-auto">
                 <button
@@ -949,7 +992,6 @@ export function NexFixMobileView() {
                   className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-[#00e676] text-slate-950 font-black shadow-[0_0_28px_rgba(0,230,118,0.7),0_8px_20px_rgba(0,0,0,0.5)] transition-all hover:scale-110 active:scale-95 hover:bg-[#00ff84]"
                   aria-label="Quick Data Entry Collection"
                 >
-                  {/* Subtle pulsing outer ring */}
                   <span className="absolute inset-0 rounded-full bg-[#00e676] opacity-30 animate-ping group-hover:opacity-50" />
                   <Plus className="relative z-10 h-7 w-7 stroke-[3] transition-transform group-hover:rotate-90" />
                 </button>
@@ -960,7 +1002,6 @@ export function NexFixMobileView() {
             <nav className="fixed bottom-3 left-0 right-0 z-30 pointer-events-none flex justify-center px-4">
               <div className="w-full max-w-[390px] pointer-events-auto">
                 <div className="flex items-center justify-around rounded-3xl border border-slate-700/70 bg-slate-900/85 backdrop-blur-2xl px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.1)]">
-                  {/* 1. Overview */}
                   <button
                     onClick={() => setActiveTab("overview")}
                     className={`flex flex-col items-center gap-1 rounded-2xl px-3.5 py-1.5 transition-all ${
@@ -978,7 +1019,6 @@ export function NexFixMobileView() {
                     <span className="text-[10px] font-semibold">Overview</span>
                   </button>
 
-                  {/* 2. Collect */}
                   <button
                     onClick={() => setActiveTab("collect")}
                     className={`flex flex-col items-center gap-1 rounded-2xl px-3.5 py-1.5 transition-all ${
@@ -996,7 +1036,6 @@ export function NexFixMobileView() {
                     <span className="text-[10px] font-semibold">Collect</span>
                   </button>
 
-                  {/* 3. Customers */}
                   <button
                     onClick={() => setActiveTab("customers")}
                     className={`flex flex-col items-center gap-1 rounded-2xl px-3.5 py-1.5 transition-all ${
@@ -1014,7 +1053,6 @@ export function NexFixMobileView() {
                     <span className="text-[10px] font-semibold">Customers</span>
                   </button>
 
-                  {/* 4. Reports */}
                   <button
                     onClick={() => setActiveTab("reports")}
                     className={`flex flex-col items-center gap-1 rounded-2xl px-3.5 py-1.5 transition-all ${
@@ -1035,11 +1073,10 @@ export function NexFixMobileView() {
               </div>
             </nav>
 
-            {/* QUICK DATA ENTRY MODAL (Slide-over / Modal Triggered by FAB or Collect Button) */}
+            {/* QUICK DATA ENTRY MODAL */}
             {quickCollectOpen && (
               <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md p-0 sm:p-4 animate-fade-in-up">
                 <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-slate-700/80 bg-slate-900/95 p-6 shadow-2xl backdrop-blur-2xl">
-                  {/* Top Bar with Dismiss */}
                   <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00e676]/20 text-[#00e676]">
@@ -1047,7 +1084,7 @@ export function NexFixMobileView() {
                       </div>
                       <div>
                         <h3 className="text-sm font-bold text-white">Record Collection</h3>
-                        <p className="text-[11px] text-slate-400">Quick field entry • FIFO Allocation</p>
+                        <p className="text-[11px] text-slate-400">Database Entry</p>
                       </div>
                     </div>
                     <button
@@ -1058,116 +1095,128 @@ export function NexFixMobileView() {
                     </button>
                   </div>
 
-                  <form onSubmit={handleRecordPayment} className="mt-4 space-y-4">
-                    {/* Customer Selection */}
-                    <div>
-                      <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Customer
-                      </label>
-                      <select
-                        value={selectedCustomer?.id || ""}
-                        onChange={(e) => {
-                          const found = customers.find((c) => c.id === e.target.value);
-                          if (found) {
-                            setSelectedCustomer(found);
-                            setCollectAmount(found.amountDue);
-                          }
-                        }}
-                        className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-xs text-white focus:border-[#00e676] focus:outline-none"
+                  {customers.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-slate-400">
+                      <p>No customers found in database to record payment for.</p>
+                      <Link
+                        href="/dashboard/customers"
+                        className="inline-block mt-3 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white"
                       >
-                        {customers.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} ({c.scheme.split("(")[0]}) - Due: ₹{c.amountDue}
-                          </option>
-                        ))}
-                      </select>
+                        Create Customer in Database
+                      </Link>
                     </div>
+                  ) : (
+                    <form onSubmit={handleRecordPayment} className="mt-4 space-y-4">
+                      {/* Customer Selection */}
+                      <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Select Customer
+                        </label>
+                        <select
+                          value={selectedCustomer?.id || ""}
+                          onChange={(e) => {
+                            const found = customers.find((c) => c.id === e.target.value);
+                            if (found) {
+                              setSelectedCustomer(found);
+                              setCollectAmount(found.amountDue > 0 ? found.amountDue : 1000);
+                            }
+                          }}
+                          className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-xs text-white focus:border-[#00e676] focus:outline-none"
+                        >
+                          {customers.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name} ({c.scheme}) {c.amountDue > 0 ? `- Due: ₹${c.amountDue}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    {/* Amount Input with Quick Increment Chips */}
-                    <div>
-                      <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Collection Amount (₹)
-                      </label>
-                      <div className="relative mt-1.5">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
-                          ₹
-                        </span>
+                      {/* Amount Input */}
+                      <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Collection Amount (₹)
+                        </label>
+                        <div className="relative mt-1.5">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                            ₹
+                          </span>
+                          <input
+                            type="number"
+                            required
+                            min={1}
+                            value={collectAmount || ""}
+                            onChange={(e) => setCollectAmount(Number(e.target.value))}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-850 pl-8 pr-4 py-2.5 text-base font-bold text-[#00e676] font-mono focus:border-[#00e676] focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="mt-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                          {[500, 1000, 2000, 5000].map((chip) => (
+                            <button
+                              key={chip}
+                              type="button"
+                              onClick={() => setCollectAmount(chip)}
+                              className="rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/60 px-2.5 py-1 text-[11px] font-mono text-slate-300 transition-colors"
+                            >
+                              +₹{chip.toLocaleString("en-IN")}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Payment Mode Selection */}
+                      <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Payment Mode
+                        </label>
+                        <div className="mt-1.5 grid grid-cols-3 gap-2">
+                          {[
+                            { id: "CASH", label: "Cash", icon: Banknote },
+                            { id: "UPI", label: "UPI QR", icon: QrCode },
+                            { id: "BANK", label: "Bank Trf", icon: CreditCard },
+                          ].map((m) => {
+                            const Icon = m.icon;
+                            const active = paymentMode === m.id;
+                            return (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => setPaymentMode(m.id as any)}
+                                className={`flex flex-col items-center justify-center gap-1 rounded-xl p-2.5 text-xs font-semibold border transition-all ${
+                                  active
+                                    ? "border-[#00e676] bg-[#00e676]/15 text-[#00e676] shadow-[0_0_10px_rgba(0,230,118,0.2)]"
+                                    : "border-slate-800 bg-slate-800/40 text-slate-400 hover:text-slate-200"
+                                }`}
+                              >
+                                <Icon className="h-4 w-4" />
+                                <span>{m.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Notes */}
+                      <div>
                         <input
-                          type="number"
-                          required
-                          min={100}
-                          value={collectAmount || ""}
-                          onChange={(e) => setCollectAmount(Number(e.target.value))}
-                          className="w-full rounded-xl border border-slate-700 bg-slate-850 pl-8 pr-4 py-2.5 text-base font-bold text-[#00e676] font-mono focus:border-[#00e676] focus:outline-none"
+                          type="text"
+                          placeholder="Optional remarks (e.g. Received at shop, UPI ref...)"
+                          value={paymentNotes}
+                          onChange={(e) => setPaymentNotes(e.target.value)}
+                          className="w-full rounded-xl border border-slate-700/60 bg-slate-800/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-[#00e676] focus:outline-none"
                         />
                       </div>
 
-                      {/* Quick chips */}
-                      <div className="mt-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-                        {[500, 1000, 2000, 5000].map((chip) => (
-                          <button
-                            key={chip}
-                            type="button"
-                            onClick={() => setCollectAmount(chip)}
-                            className="rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/60 px-2.5 py-1 text-[11px] font-mono text-slate-300 transition-colors"
-                          >
-                            +₹{chip.toLocaleString("en-IN")}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Payment Mode Selection */}
-                    <div>
-                      <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        Payment Mode
-                      </label>
-                      <div className="mt-1.5 grid grid-cols-3 gap-2">
-                        {[
-                          { id: "CASH", label: "Cash", icon: Banknote },
-                          { id: "UPI", label: "UPI QR", icon: QrCode },
-                          { id: "BANK", label: "Bank Trf", icon: CreditCard },
-                        ].map((m) => {
-                          const Icon = m.icon;
-                          const active = paymentMode === m.id;
-                          return (
-                            <button
-                              key={m.id}
-                              type="button"
-                              onClick={() => setPaymentMode(m.id as any)}
-                              className={`flex flex-col items-center justify-center gap-1 rounded-xl p-2.5 text-xs font-semibold border transition-all ${
-                                active
-                                  ? "border-[#00e676] bg-[#00e676]/15 text-[#00e676] shadow-[0_0_10px_rgba(0,230,118,0.2)]"
-                                  : "border-slate-800 bg-slate-800/40 text-slate-400 hover:text-slate-200"
-                              }`}
-                            >
-                              <Icon className="h-4 w-4" />
-                              <span>{m.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Optional remarks (e.g. Received at shop, UPI ref...)"
-                        value={paymentNotes}
-                        onChange={(e) => setPaymentNotes(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700/60 bg-slate-800/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-[#00e676] focus:outline-none"
-                      />
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      className="w-full rounded-xl bg-gradient-to-r from-[#00e676] to-emerald-500 hover:from-[#00e676] hover:to-emerald-400 py-3 text-xs font-extrabold text-slate-950 uppercase tracking-wider shadow-[0_0_20px_rgba(0,230,118,0.4)] transition-all active:scale-95"
-                    >
-                      Confirm & Send WhatsApp Receipt
-                    </button>
-                  </form>
+                      {/* Submit Button */}
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full rounded-xl bg-gradient-to-r from-[#00e676] to-emerald-500 hover:from-[#00e676] hover:to-emerald-400 py-3 text-xs font-extrabold text-slate-950 uppercase tracking-wider shadow-[0_0_20px_rgba(0,230,118,0.4)] transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {isSubmitting ? "Persisting to Database..." : "Confirm & Save in DB"}
+                      </button>
+                    </form>
+                  )}
                 </div>
               </div>
             )}

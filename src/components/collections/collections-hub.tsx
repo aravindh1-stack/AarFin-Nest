@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { members as mockMembers, type Member } from "@/lib/mock-members";
+import { type Member } from "@/lib/mock-members";
 import { MemberDrawer } from "@/components/collections/member-drawer";
 import { SkeletonBlock } from "@/components/skeleton-block";
 
@@ -203,11 +203,11 @@ export function CollectionsHub() {
           }
         }
       } else {
-        setMemberList(mockMembers);
+        setMemberList([]);
       }
     } catch (err) {
       console.error("Error fetching collections data:", err);
-      setMemberList(mockMembers);
+      setMemberList([]);
     } finally {
       setLoading(false);
     }

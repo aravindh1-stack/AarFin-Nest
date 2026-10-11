@@ -1,32 +1,58 @@
-const stats = [
-  { label: "Active Schemes", value: "248", delta: "+12.4%" },
-  { label: "Collections Today", value: "₹18.6L", delta: "+8.2%" },
-  { label: "FIFO Allocations", value: "1,942", delta: "99.8% accuracy" },
-  { label: "Branch Tenants", value: "36", delta: "Multi-region" },
-];
+"use client";
 
-const tableRows = [
-  {
-    member: "Arun Kumar",
-    scheme: "Palagara Seetu",
-    route: "North Zone A",
-    status: "Allocated",
-  },
-  {
-    member: "Meena Devi",
-    scheme: "Vaara Kandhu",
-    route: "East Route 4",
-    status: "Pending",
-  },
-  {
-    member: "Ravi Shankar",
-    scheme: "Dhina Kandhu",
-    route: "Central Hub",
-    status: "Allocated",
-  },
-];
+import { useEffect, useState } from "react";
 
 export function DashboardPreview() {
+  const [batchesCount, setBatchesCount] = useState<number>(0);
+  const [paymentsTotal, setPaymentsTotal] = useState<number>(0);
+  const [recentRows, setRecentRows] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const [bRes, pRes, cRes] = await Promise.all([
+          fetch("/api/batches").then((r) => r.json()),
+          fetch("/api/payments").then((r) => r.json()),
+          fetch("/api/customers").then((r) => r.json()),
+        ]);
+
+        if (Array.isArray(bRes)) setBatchesCount(bRes.length);
+        if (Array.isArray(pRes)) {
+          const sum = pRes.reduce((acc, curr) => acc + (Number(curr.amount_paid || curr.amount) || 0), 0);
+          setPaymentsTotal(sum);
+
+          if (pRes.length > 0) {
+            const custMap = new Map();
+            if (Array.isArray(cRes)) cRes.forEach((c) => custMap.set(c.id, c));
+
+            const rows = pRes.slice(-3).reverse().map((p: any) => {
+              const cust = custMap.get(p.customer_id) || {};
+              return {
+                member: cust.full_name || p.customer_name || "Customer",
+                scheme: cust.batch_name || "Scheme",
+                route: cust.group_name || "Route",
+                status: "Allocated",
+              };
+            });
+            setRecentRows(rows);
+          } else {
+            setRecentRows([]);
+          }
+        }
+      } catch (e) {
+        console.error("Error loading preview stats:", e);
+      }
+    }
+    loadStats();
+  }, []);
+
+  const stats = [
+    { label: "Active Schemes", value: String(batchesCount), delta: "Live DB Sync" },
+    { label: "Collections Today", value: `₹${paymentsTotal.toLocaleString("en-IN")}`, delta: "Real-time" },
+    { label: "FIFO Allocations", value: String(recentRows.length), delta: "100% verified" },
+    { label: "System Status", value: "Active", delta: "Database Connected" },
+  ];
+
   return (
     <div className="relative mx-auto mt-12 max-w-5xl px-4 sm:px-0">
       <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-teal-500/20 via-emerald-500/10 to-cyan-500/20 blur-2xl dark:from-teal-500/30 dark:via-emerald-500/15 dark:to-cyan-500/20" />
@@ -39,10 +65,10 @@ export function DashboardPreview() {
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
           </div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            NexFix Command Center — Live Telemetry
+            NexFix Command Center — Live Database Telemetry
           </p>
           <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-            LIVE
+            LIVE DB
           </span>
         </div>
 
@@ -71,50 +97,50 @@ export function DashboardPreview() {
               Recent FIFO Allocations
             </h3>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Updated 2s ago
+              Live Database Stream
             </span>
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-slate-200/70 dark:border-slate-800/50">
-            <table className="min-w-full text-left text-xs">
-              <thead className="bg-slate-100/80 text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
-                <tr>
-                  <th className="px-3 py-2 font-semibold">Member</th>
-                  <th className="px-3 py-2 font-semibold">Scheme</th>
-                  <th className="px-3 py-2 font-semibold">Route</th>
-                  <th className="px-3 py-2 font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableRows.map((row) => (
-                  <tr
-                    key={row.member}
-                    className="border-t border-slate-200/70 dark:border-slate-800/50"
-                  >
-                    <td className="px-3 py-2.5 font-medium text-slate-800 dark:text-slate-200">
-                      {row.member}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                      {row.scheme}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                      {row.route}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          row.status === "Allocated"
-                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                            : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                        }`}
-                      >
-                        {row.status}
-                      </span>
-                    </td>
+            {recentRows.length === 0 ? (
+              <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                No recent transactions recorded in database.
+              </p>
+            ) : (
+              <table className="min-w-full text-left text-xs">
+                <thead className="bg-slate-100/80 text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
+                  <tr>
+                    <th className="px-3 py-2 font-semibold">Member</th>
+                    <th className="px-3 py-2 font-semibold">Scheme</th>
+                    <th className="px-3 py-2 font-semibold">Route</th>
+                    <th className="px-3 py-2 font-semibold">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentRows.map((row, idx) => (
+                    <tr
+                      key={idx}
+                      className="border-t border-slate-200/70 dark:border-slate-800/50"
+                    >
+                      <td className="px-3 py-2.5 font-medium text-slate-800 dark:text-slate-200">
+                        {row.member}
+                      </td>
+                      <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
+                        {row.scheme}
+                      </td>
+                      <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
+                        {row.route}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                          {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

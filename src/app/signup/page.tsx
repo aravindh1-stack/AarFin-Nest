@@ -17,7 +17,7 @@ export default function SignUpPage() {
             <img
               src="/nexfix-logo.png"
               alt="NexFix Logo"
-              className="h-10 w-10 rounded-xl object-contain shadow-md shadow-teal-500/20"
+              className="h-10 w-auto object-contain"
             />
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-none">

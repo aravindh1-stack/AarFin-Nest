@@ -6,7 +6,7 @@ export function SiteFooter() {
           <img
             src="/nexfix-logo.png"
             alt="NexFix Logo"
-            className="h-6 w-6 rounded-md object-contain"
+            className="h-6 w-auto object-contain"
           />
           <span className="font-bold tracking-tight text-slate-800 dark:text-white">
             NexFix · AarFin Nest

@@ -38,7 +38,7 @@ export function MemberDrawer({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer_id: member.id,
+          customer_id: (member as any).dbId || member.id,
           amount_paid: Number(amount),
           payment_method: "CASH",
           receipt_no: receiptNo,
@@ -99,6 +99,9 @@ export function MemberDrawer({
                   <h2 className="truncate text-base font-bold text-slate-900 dark:text-white">
                     {member.name}
                   </h2>
+                  <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                    ID: {(member as any).customerCode || member.id}
+                  </p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
                     <span className="font-bold uppercase text-teal-600 dark:text-teal-400">
                       {(member as any).frequencyType || "WEEKLY"}
@@ -306,7 +309,7 @@ export function MemberDrawer({
                           <img
                             src="/nexfix-logo.png"
                             alt="NexFix"
-                            className="h-7 w-7 rounded-lg object-contain shrink-0"
+                            className="h-7 w-auto object-contain shrink-0"
                           />
                           <div className="min-w-0">
                             <p className="font-mono font-bold text-teal-600 dark:text-teal-400 truncate">

@@ -10,7 +10,6 @@ const navGroups = [
     items: [
       { label: "Overview", href: "/dashboard", icon: "◫" },
       { label: "Collections Hub", href: "/dashboard/collections", icon: "◈" },
-      { label: "Mobile Collector", href: "/mobile", icon: "📱" },
       { label: "Customer Directory", href: "/dashboard/customers", icon: "👤" },
       { label: "Schemes", href: "/dashboard/schemes", icon: "⚛" },
       { label: "Routes & Groups", href: "/dashboard/routes", icon: "◎" },
@@ -72,7 +71,7 @@ export function DashboardSidebar() {
           <img
             src="/nexfix-logo.png"
             alt="NexFix Logo"
-            className="h-9 w-9 rounded-xl object-contain shadow-md shadow-teal-500/20"
+            className="h-8 w-auto object-contain"
           />
           <div className="flex flex-col">
             <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-none">

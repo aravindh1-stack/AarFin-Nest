@@ -42,7 +42,7 @@ export function DashboardTopbar({
           <img
             src="/nexfix-logo.png"
             alt="NexFix Logo"
-            className="h-8 w-8 rounded-lg object-contain shadow-sm"
+            className="h-8 w-auto object-contain"
           />
         </Link>
 

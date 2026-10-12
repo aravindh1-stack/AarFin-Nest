@@ -7,7 +7,6 @@ import { useTheme } from "@/components/theme-provider";
 
 const navLinks = [
   { label: "Solutions", href: "/solutions" },
-  { label: "Mobile App", href: "/mobile" },
   { label: "Pricing", href: "/pricing" },
   { label: "Documentation", href: "/documentation" },
   { label: "Enterprise", href: "/enterprise" },
@@ -58,7 +57,7 @@ export function Navbar() {
           <img
             src="/nexfix-logo.png"
             alt="NexFix Logo"
-            className="h-9 w-9 rounded-xl object-contain shadow-md shadow-teal-500/20"
+            className="h-8 w-auto object-contain"
           />
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">

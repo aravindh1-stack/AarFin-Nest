@@ -120,7 +120,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <img
                 src="/nexfix-logo.png"
                 alt="NexFix Logo"
-                className="h-9 w-9 rounded-xl object-contain shadow-md shadow-teal-500/20"
+                className="h-8 w-auto object-contain"
               />
               <div className="flex flex-col">
                 <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">

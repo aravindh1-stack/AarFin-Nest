@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { type Member } from "@/lib/mock-members";
 import { MemberDrawer } from "@/components/collections/member-drawer";
 import { SkeletonBlock } from "@/components/skeleton-block";
@@ -178,10 +177,13 @@ export function CollectionsHub() {
           });
 
           return {
-            id: c.id || c.customer_code || Math.random().toString(),
+            id: c.customer_code || c.id || Math.random().toString(),
+            dbId: c.id,
+            customerCode: c.customer_code || c.id || "",
             name: c.full_name || "Unknown Member",
             initials: initials || "MB",
-            phone: c.phone_number || "+91 90000 00000",
+            phone: c.phone_number || "",
+            idProof: c.id_proof_number || "",
             memberSince: c.joining_date || "Aug 2026",
             scheme: c.batch_name || batch.batch_name || "Micro-Finance Scheme",
             route: c.group_name || "Default Route",
@@ -219,16 +221,47 @@ export function CollectionsHub() {
 
   const filtered = useMemo(() => {
     return memberList.filter((member) => {
-      const matchesQuery =
-        member.name.toLowerCase().includes(query.toLowerCase()) ||
-        member.route.toLowerCase().includes(query.toLowerCase()) ||
-        member.scheme.toLowerCase().includes(query.toLowerCase());
+      const q = query.trim().toLowerCase();
 
       const matchesFilter =
         filter === "All" ||
         (filter === "Has Dues" && member.totalPendingDues > 0) ||
         (filter === "Has Advance" && member.advanceBalance > 0) ||
         (filter === "Fully Paid" && member.totalPendingDues === 0);
+
+      if (!q) return matchesFilter;
+
+      // Match member name, scheme, route
+      const nameMatch = member.name?.toLowerCase().includes(q);
+      const schemeMatch = member.scheme?.toLowerCase().includes(q);
+      const routeMatch = member.route?.toLowerCase().includes(q);
+
+      // Match member ID No, customer code, database UUID, and phone
+      const idMatch = member.id?.toLowerCase().includes(q);
+      const dbIdMatch = (member as any).dbId?.toLowerCase().includes(q);
+      const codeMatch = (member as any).customerCode?.toLowerCase().includes(q);
+      const phoneMatch = (member as any).phone?.toLowerCase().includes(q);
+      const idProofMatch = (member as any).idProof?.toLowerCase().includes(q);
+
+      // Numeric digit matching (e.g. typing "1" or "01" matches "MNF-PC-001" or "001")
+      const numericQ = q.replace(/[^0-9]/g, "");
+      const memberCodeDigits = ((member as any).customerCode || member.id || "").replace(/[^0-9]/g, "");
+      const numericMatch =
+        numericQ.length > 0 &&
+        (memberCodeDigits.includes(numericQ) ||
+          (memberCodeDigits.length > 0 && parseInt(memberCodeDigits, 10) === parseInt(numericQ, 10)));
+
+      const matchesQuery = Boolean(
+        nameMatch ||
+        idMatch ||
+        dbIdMatch ||
+        codeMatch ||
+        phoneMatch ||
+        idProofMatch ||
+        numericMatch ||
+        schemeMatch ||
+        routeMatch
+      );
 
       return matchesQuery && matchesFilter;
     });
@@ -253,36 +286,26 @@ export function CollectionsHub() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search member, route, scheme..."
+            placeholder="Search member name, ID no, phone, route, scheme..."
             className="w-full rounded-lg border border-slate-200/80 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800/50 dark:bg-[#121212] dark:text-slate-200 dark:placeholder:text-slate-500"
           />
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-          <div className="flex gap-2">
-            {filters.map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setFilter(f)}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                  filter === f
-                    ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
-                    : "border border-slate-200/80 text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800/50 dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-
-          <Link
-            href="/mobile"
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-slate-900/90 px-3.5 py-1.5 text-xs font-bold text-[#00e676] shadow-sm hover:border-[#00e676] transition-all ml-auto"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-[#00e676] animate-pulse" />
-            Field Mobile View
-          </Link>
+          {filters.map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                filter === f
+                  ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
+                  : "border border-slate-200/80 text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800/50 dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -313,7 +336,7 @@ export function CollectionsHub() {
                       {member.name}
                     </p>
                     <p className="text-[11px] font-mono text-slate-400">
-                      {member.id}
+                      ID: {(member as any).customerCode || member.id}
                     </p>
                   </div>
                 </div>
@@ -400,8 +423,8 @@ export function CollectionsHub() {
                           <p className="font-medium text-slate-800 dark:text-slate-200">
                             {member.name}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-500">
-                            {member.id}
+                          <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                            ID: {(member as any).customerCode || member.id}
                           </p>
                         </div>
                       </div>

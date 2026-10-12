@@ -24,7 +24,7 @@ export function AuthBrandPanel() {
         <img
           src="/nexfix-logo.png"
           alt="NexFix Logo"
-          className="h-10 w-10 rounded-xl object-contain shadow-lg shadow-teal-500/20"
+          className="h-10 w-auto object-contain"
         />
         <div className="flex flex-col">
           <span className="text-xl font-bold tracking-tight text-white leading-none">

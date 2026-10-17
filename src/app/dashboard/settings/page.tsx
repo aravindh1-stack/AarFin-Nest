@@ -14,7 +14,7 @@ export default function SettingsPage() {
       />
 
       <div className="max-w-3xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-6 dark:border-slate-800/50 dark:bg-[#121212]/70">
+        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-6 dark:border-[#202425] dark:bg-[#151718]/70">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             Appearance & Theme Preference
           </h3>
@@ -22,7 +22,7 @@ export default function SettingsPage() {
             Customize system appearance — Deep Black theme for low-light command centers.
           </p>
 
-          <div className="mt-4 flex items-center justify-between border-t border-slate-200/70 pt-4 dark:border-slate-800/50">
+          <div className="mt-4 flex items-center justify-between border-t border-slate-200/70 pt-4 dark:border-[#202425]">
             <div>
               <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 Current Theme: <span className="capitalize">{theme}</span>
@@ -41,7 +41,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-6 dark:border-slate-800/50 dark:bg-[#121212]/70">
+        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-6 dark:border-[#202425] dark:bg-[#151718]/70">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             FIFO Allocation Engine Rules
           </h3>
@@ -50,7 +50,7 @@ export default function SettingsPage() {
           </p>
 
           <div className="mt-4 space-y-3 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-200/70 pb-3 dark:border-slate-800/50">
+            <div className="flex items-center justify-between border-b border-slate-200/70 pb-3 dark:border-[#202425]">
               <span className="text-slate-700 dark:text-slate-300">
                 Auto-Apply Advance Credit to Next Dues Cycle
               </span>
@@ -58,7 +58,7 @@ export default function SettingsPage() {
                 Enabled
               </span>
             </div>
-            <div className="flex items-center justify-between border-b border-slate-200/70 pb-3 dark:border-slate-800/50">
+            <div className="flex items-center justify-between border-b border-slate-200/70 pb-3 dark:border-[#202425]">
               <span className="text-slate-700 dark:text-slate-300">
                 Strict Sequential Cycle Enforcement
               </span>

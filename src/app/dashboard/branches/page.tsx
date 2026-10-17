@@ -87,7 +87,7 @@ export default function BranchesPage() {
             ))}
           </div>
         ) : branches.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-12 text-center text-xs text-slate-500 dark:border-slate-800/50 dark:bg-[#121212]/70">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-12 text-center text-xs text-slate-500 dark:border-[#202425] dark:bg-[#151718]/70">
             No branch tenants registered in database.
           </div>
         ) : (
@@ -95,7 +95,7 @@ export default function BranchesPage() {
             {branches.map((b) => (
               <div
                 key={b.id}
-                className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 dark:border-slate-800/50 dark:bg-[#121212]/70"
+                className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 dark:border-[#202425] dark:bg-[#151718]/70"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-teal-600 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
@@ -112,7 +112,7 @@ export default function BranchesPage() {
                   {b.code} · {b.location}
                 </p>
 
-                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-200/70 pt-3 text-xs dark:border-slate-800/50">
+                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-200/70 pt-3 text-xs dark:border-[#202425]">
                   <div>
                     <p className="text-[10px] text-slate-400">Enrolled Members</p>
                     <p className="font-bold text-slate-900 dark:text-white">

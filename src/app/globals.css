@@ -10,9 +10,9 @@
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #e2e8f0;
-  --card: rgba(18, 18, 18, 0.72);
+  --background: #0C0D0E;
+  --foreground: #ECEDEE;
+  --card: rgba(21, 23, 24, 0.72);
   --accent: #14b8a6;
 }
 
@@ -35,15 +35,15 @@
     --brand-primary: #0F766E;
   }
 
-  /* 2. DEEP BLACK THEME */
+  /* 2. AARCODE OBSIDIAN DARK THEME */
   .theme-deep-black {
-    --bg-main: #000000;
-    --card-bg: #121212;
-    --card-hover: #1E1E1E;
-    --text-main: #FFFFFF;
-    --text-muted: #A3A3A3;
-    --border-color: #262626;
-    --input-bg: #171717;
+    --bg-main: #0C0D0E;
+    --card-bg: #151718;
+    --card-hover: #1E2022;
+    --text-main: #ECEDEE;
+    --text-muted: #8A9099;
+    --border-color: #202425;
+    --input-bg: #121314;
     --brand-primary: #0F766E;
   }
 }

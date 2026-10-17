@@ -26,11 +26,11 @@ const docSections = [
 
 export default function DocumentationPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
+    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0C0D0E] dark:text-slate-100">
       <Navbar />
 
       <div className="mx-auto flex max-w-7xl">
-        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-slate-200/70 px-6 py-10 lg:block dark:border-slate-800/50">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-slate-200/70 px-6 py-10 lg:block dark:border-[#202425]">
           <nav className="space-y-8">
             {docSections.map((section) => (
               <div key={section.heading}>
@@ -73,8 +73,8 @@ export default function DocumentationPage() {
             a member&apos;s balance.
           </p>
 
-          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 dark:border-slate-800/50 dark:bg-[#121212]/70">
-            <div className="flex items-center justify-between border-b border-slate-200/70 px-5 py-3 dark:border-slate-800/50">
+          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 dark:border-[#202425] dark:bg-[#151718]/70">
+            <div className="flex items-center justify-between border-b border-slate-200/70 px-5 py-3 dark:border-[#202425]">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 POST /v1/collections
               </span>
@@ -107,7 +107,7 @@ export default function DocumentationPage() {
             ].map((step, idx) => (
               <li
                 key={step}
-                className="flex items-start gap-3 rounded-xl border border-slate-200/70 bg-white/60 p-4 text-sm text-slate-700 dark:border-slate-800/50 dark:bg-white/[0.02] dark:text-slate-300"
+                className="flex items-start gap-3 rounded-xl border border-slate-200/70 bg-white/60 p-4 text-sm text-slate-700 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-300"
               >
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-500/10 text-xs font-bold text-teal-700 dark:bg-teal-400/10 dark:text-teal-300">
                   {idx + 1}

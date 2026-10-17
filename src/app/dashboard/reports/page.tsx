@@ -57,7 +57,7 @@ export default function ReportsPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 dark:border-slate-800/50 dark:bg-[#121212]/70">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 dark:border-[#202425] dark:bg-[#151718]/70">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Total Logged Payments
             </p>
@@ -66,7 +66,7 @@ export default function ReportsPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 dark:border-slate-800/50 dark:bg-[#121212]/70">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 dark:border-[#202425] dark:bg-[#151718]/70">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Total Value Collected
             </p>
@@ -75,7 +75,7 @@ export default function ReportsPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 dark:border-slate-800/50 dark:bg-[#121212]/70">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 dark:border-[#202425] dark:bg-[#151718]/70">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Audit Compliance Status
             </p>
@@ -85,15 +85,15 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 dark:border-slate-800/50 dark:bg-[#121212]/70">
-          <div className="border-b border-slate-200/70 p-4 dark:border-slate-800/50">
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 dark:border-[#202425] dark:bg-[#151718]/70">
+          <div className="border-b border-slate-200/70 p-4 dark:border-[#202425]">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Payment Transaction Ledger
             </h3>
           </div>
 
           {/* MOBILE TRANSACTIONS (Visible only on mobile screens < md) */}
-          <div className="divide-y divide-slate-100 p-3 md:hidden dark:divide-slate-800/50">
+          <div className="divide-y divide-slate-100 p-3 md:hidden dark:divide-[#202425]">
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <SkeletonBlock key={i} className="my-2 h-16 w-full rounded-xl" />
@@ -144,7 +144,7 @@ export default function ReportsPage() {
               <tbody>
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                    <tr key={i} className="border-t border-slate-200/70 dark:border-[#202425]">
                       <td colSpan={5} className="px-5 py-3.5">
                         <SkeletonBlock className="h-7 w-full rounded-lg" />
                       </td>
@@ -160,7 +160,7 @@ export default function ReportsPage() {
                   payments.map((p, index) => (
                     <tr
                       key={p.id || index}
-                      className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02]"
+                      className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-[#202425] dark:hover:bg-white/[0.02]"
                     >
                       <td className="px-5 py-3.5 font-mono text-xs text-slate-500 dark:text-slate-400">
                         {p.id ? String(p.id).slice(0, 8) : `#PAY-${index + 1}`}

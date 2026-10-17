@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import { useState } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -36,15 +37,8 @@ export default function Sidebar() {
       <div>
         <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "var(--border-color)" }}>
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-md border border-[#0F766E]/30 bg-slate-900 flex items-center justify-center">
-              <Image
-                src="/aarga-logo.png"
-                alt="Aarga Logo"
-                width={40}
-                height={40}
-                className="object-contain p-1"
-                priority
-              />
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-md border border-[#0F766E]/30 bg-slate-900/10 dark:bg-slate-900 flex items-center justify-center p-1">
+              <BrandLogo className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">

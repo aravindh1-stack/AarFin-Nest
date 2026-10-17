@@ -116,7 +116,7 @@ export function MetricCards() {
       {metrics.map((metric) => (
         <div
           key={metric.label}
-          className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 hover:shadow-lg hover:shadow-teal-500/5 dark:border-slate-800/50 dark:bg-[#121212]/70 dark:hover:border-teal-500/30"
+          className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 hover:shadow-lg hover:shadow-teal-500/5 dark:border-[#202425] dark:bg-[#151718]/70 dark:hover:border-teal-500/30"
         >
           <div className="flex items-start justify-between">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-base text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">

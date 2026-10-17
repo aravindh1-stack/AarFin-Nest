@@ -287,7 +287,7 @@ export function CollectionsHub() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search member name, ID no, phone, route, scheme..."
-            className="w-full rounded-lg border border-slate-200/80 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800/50 dark:bg-[#121212] dark:text-slate-200 dark:placeholder:text-slate-500"
+            className="w-full rounded-lg border border-slate-200/80 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 dark:placeholder:text-slate-500"
           />
         </div>
 
@@ -300,7 +300,7 @@ export function CollectionsHub() {
               className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
                 filter === f
                   ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
-                  : "border border-slate-200/80 text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800/50 dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
+                  : "border border-slate-200/80 text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
               }`}
             >
               {f}
@@ -316,7 +316,7 @@ export function CollectionsHub() {
             <SkeletonBlock key={i} className="h-36 w-full rounded-2xl" />
           ))
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-8 text-center text-xs text-slate-500 dark:border-slate-800/50 dark:bg-[#121212]/70">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-8 text-center text-xs text-slate-500 dark:border-[#202425] dark:bg-[#151718]/70">
             No members match this search.
           </div>
         ) : (
@@ -324,7 +324,7 @@ export function CollectionsHub() {
             <div
               key={member.id}
               onClick={() => setSelected(member)}
-              className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition active:scale-[0.99] dark:border-slate-800/60 dark:bg-[#121212] cursor-pointer"
+              className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition active:scale-[0.99] dark:border-[#202425] dark:bg-[#151718] cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
@@ -370,7 +370,7 @@ export function CollectionsHub() {
               </div>
 
               {/* Action Button */}
-              <div className="mt-3 border-t border-slate-100 pt-2.5 dark:border-slate-800/50">
+              <div className="mt-3 border-t border-slate-100 pt-2.5 dark:border-[#202425]">
                 <button
                   type="button"
                   className="flex w-full items-center justify-between rounded-xl bg-teal-700/10 px-3 py-2 text-xs font-bold text-teal-700 transition hover:bg-teal-700 hover:text-white dark:bg-teal-400/10 dark:text-teal-300 dark:hover:bg-teal-500 dark:hover:text-slate-900"
@@ -385,7 +385,7 @@ export function CollectionsHub() {
       </div>
 
       {/* DESKTOP / TABLET TABLE (Visible md and above) */}
-      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 md:block dark:border-slate-800/50 dark:bg-[#121212]/70">
+      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 md:block dark:border-[#202425] dark:bg-[#151718]/70">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50/80 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
@@ -401,7 +401,7 @@ export function CollectionsHub() {
             <tbody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                  <tr key={i} className="border-t border-slate-200/70 dark:border-[#202425]">
                     <td colSpan={6} className="px-5 py-4">
                       <SkeletonBlock className="h-7 w-full rounded-lg" />
                     </td>
@@ -412,7 +412,7 @@ export function CollectionsHub() {
                   <tr
                     key={member.id}
                     onClick={() => setSelected(member)}
-                    className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02] cursor-pointer"
+                    className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-[#202425] dark:hover:bg-white/[0.02] cursor-pointer"
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">

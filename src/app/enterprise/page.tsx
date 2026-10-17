@@ -38,7 +38,7 @@ const stats = [
 
 export default function EnterprisePage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
+    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0C0D0E] dark:text-slate-100">
       <Navbar />
 
       <PageHeader
@@ -49,11 +49,11 @@ export default function EnterprisePage() {
 
       <section className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-px overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-200/70 sm:grid-cols-4 dark:border-slate-800/50 dark:bg-slate-800/50">
+          <div className="grid gap-px overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-200/70 sm:grid-cols-4 dark:border-[#202425] dark:bg-slate-800/50">
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="bg-white/90 px-6 py-8 text-center dark:bg-[#121212]/90"
+                className="bg-white/90 px-6 py-8 text-center dark:bg-[#151718]/90"
               >
                 <p className="text-3xl font-bold text-teal-700 dark:text-teal-400">
                   {stat.value}
@@ -67,13 +67,13 @@ export default function EnterprisePage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200/70 px-4 py-20 sm:px-6 lg:px-8 dark:border-slate-800/50">
+      <section className="border-t border-slate-200/70 px-4 py-20 sm:px-6 lg:px-8 dark:border-[#202425]">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-4 sm:grid-cols-2">
             {pillars.map((pillar) => (
               <div
                 key={pillar.title}
-                className="flex gap-4 rounded-2xl border border-slate-200/80 bg-white/70 p-6 dark:border-slate-800/50 dark:bg-[#121212]/70"
+                className="flex gap-4 rounded-2xl border border-slate-200/80 bg-white/70 p-6 dark:border-[#202425] dark:bg-[#151718]/70"
               >
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-xl dark:border-teal-400/20 dark:bg-teal-400/10">
                   {pillar.icon}
@@ -92,7 +92,7 @@ export default function EnterprisePage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200/70 px-4 py-20 sm:px-6 lg:px-8 dark:border-slate-800/50">
+      <section className="border-t border-slate-200/70 px-4 py-20 sm:px-6 lg:px-8 dark:border-[#202425]">
         <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-teal-500/20 bg-gradient-to-br from-teal-700 to-emerald-800 px-8 py-14 text-center shadow-2xl shadow-teal-900/20">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
             Talk to our enterprise team

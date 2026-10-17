@@ -33,7 +33,7 @@ export function FeatureBentoGrid() {
   return (
     <section
       id="solutions"
-      className="border-t border-slate-200/70 px-4 py-20 sm:px-6 lg:px-8 dark:border-slate-800/50"
+      className="border-t border-slate-200/70 px-4 py-20 sm:px-6 lg:px-8 dark:border-[#202425]"
     >
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto mb-12 max-w-2xl text-center">
@@ -49,7 +49,7 @@ export function FeatureBentoGrid() {
           {features.map((feature) => (
             <article
               key={feature.title}
-              className={`group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-teal-500/30 hover:shadow-xl hover:shadow-teal-500/10 dark:border-slate-800/50 dark:bg-[#121212]/70 dark:hover:border-teal-500/30 ${feature.span}`}
+              className={`group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-teal-500/30 hover:shadow-xl hover:shadow-teal-500/10 dark:border-[#202425] dark:bg-[#151718]/70 dark:hover:border-teal-500/30 ${feature.span}`}
             >
               <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-teal-500/10 blur-2xl transition group-hover:bg-teal-500/20" />
 

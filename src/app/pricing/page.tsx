@@ -28,7 +28,7 @@ const faqs = [
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
+    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0C0D0E] dark:text-slate-100">
       <Navbar />
 
       <PageHeader
@@ -43,12 +43,12 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200/70 px-4 py-20 sm:px-6 lg:px-8 dark:border-slate-800/50">
+      <section className="border-t border-slate-200/70 px-4 py-20 sm:px-6 lg:px-8 dark:border-[#202425]">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             Frequently asked
           </h2>
-          <div className="mt-10 divide-y divide-slate-200/70 rounded-2xl border border-slate-200/80 bg-white/70 dark:divide-slate-800/50 dark:border-slate-800/50 dark:bg-[#121212]/70">
+          <div className="mt-10 divide-y divide-slate-200/70 rounded-2xl border border-slate-200/80 bg-white/70 dark:divide-[#202425] dark:border-[#202425] dark:bg-[#151718]/70">
             {faqs.map((faq) => (
               <div key={faq.question} className="p-6">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">

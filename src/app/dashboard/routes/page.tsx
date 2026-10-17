@@ -99,7 +99,7 @@ export default function RoutesPage() {
             groups.map((g) => (
               <div
                 key={g.id}
-                className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 dark:border-slate-800/50 dark:bg-[#121212]/70"
+                className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 dark:border-[#202425] dark:bg-[#151718]/70"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-teal-600 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
@@ -116,7 +116,7 @@ export default function RoutesPage() {
                   {g.route_name || "Primary Route"}
                 </p>
 
-                <div className="mt-4 border-t border-slate-200/70 pt-3 text-xs dark:border-slate-800/50">
+                <div className="mt-4 border-t border-slate-200/70 pt-3 text-xs dark:border-[#202425]">
                   <p className="text-[10px] text-slate-400">Assigned Agent</p>
                   <p className="font-semibold text-slate-800 dark:text-slate-200">
                     {g.collection_agent || "Field Agent"}
@@ -130,7 +130,7 @@ export default function RoutesPage() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xl dark:border-slate-800/50 dark:bg-[#121212] max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xl dark:border-[#202425] dark:bg-[#151718] max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Create New Route Group
             </h3>
@@ -145,7 +145,7 @@ export default function RoutesPage() {
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   placeholder="e.g. North Zone A"
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                 />
               </div>
               <div>
@@ -157,7 +157,7 @@ export default function RoutesPage() {
                   value={groupCode}
                   onChange={(e) => setGroupCode(e.target.value)}
                   placeholder="e.g. GRP-N01"
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                 />
               </div>
               <div>
@@ -169,14 +169,14 @@ export default function RoutesPage() {
                   value={agent}
                   onChange={(e) => setAgent(e.target.value)}
                   placeholder="e.g. Boopathy R."
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 dark:border-slate-800 dark:text-slate-400"
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 dark:border-[#202425] dark:text-slate-400"
                 >
                   Cancel
                 </button>

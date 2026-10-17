@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { BrandLogo } from "@/components/brand-logo";
 
 const navLinks = [
   { label: "Solutions", href: "/solutions" },
@@ -51,14 +52,10 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl dark:border-slate-800/50 dark:bg-[#000000]/90">
+    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl dark:border-[#202425] dark:bg-[#0C0D0E]/90">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <img
-            src="/nexfix-logo.png"
-            alt="NexFix Logo"
-            className="h-8 w-auto object-contain"
-          />
+          <BrandLogo className="h-8 w-auto object-contain" />
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
               NexFix
@@ -99,7 +96,7 @@ export function Navbar() {
             type="button"
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white/60 text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800/50 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white/60 text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
           >
             {theme === "light" ? <MoonIcon /> : <SunIcon />}
           </button>
@@ -123,7 +120,7 @@ export function Navbar() {
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white/60 text-slate-700 transition md:hidden dark:border-slate-800/60 dark:bg-slate-900/60 dark:text-slate-300 cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white/60 text-slate-700 transition md:hidden dark:border-[#202425] dark:bg-slate-900/60 dark:text-slate-300 cursor-pointer"
           >
             {mobileMenuOpen ? (
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
@@ -150,7 +147,7 @@ export function Navbar() {
 
       {/* Mobile Slide-Down Menu */}
       {mobileMenuOpen && (
-        <div className="border-b border-slate-200/80 bg-white/95 px-4 pb-6 pt-3 shadow-xl backdrop-blur-2xl md:hidden dark:border-slate-800/60 dark:bg-[#000000]/95 animate-in slide-in-from-top-2 duration-200">
+        <div className="border-b border-slate-200/80 bg-white/95 px-4 pb-6 pt-3 shadow-xl backdrop-blur-2xl md:hidden dark:border-[#202425] dark:bg-[#0C0D0E]/95 animate-in slide-in-from-top-2 duration-200">
           <ul className="space-y-1.5 pb-4">
             {navLinks.map((link) => {
               const active = pathname === link.href;
@@ -172,7 +169,7 @@ export function Navbar() {
             })}
           </ul>
 
-          <div className="flex flex-col gap-2.5 border-t border-slate-200/70 pt-4 dark:border-slate-800/50">
+          <div className="flex flex-col gap-2.5 border-t border-slate-200/70 pt-4 dark:border-[#202425]">
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/components/theme-provider";
+import { BrandLogo } from "@/components/brand-logo";
 
 const navGroups = [
   {
@@ -65,14 +66,10 @@ export function DashboardSidebar() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl lg:flex dark:border-slate-800/50 dark:bg-[#000000]/90">
-      <div className="flex h-16 items-center gap-3 border-b border-slate-200/70 px-5 dark:border-slate-800/50">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl lg:flex dark:border-[#202425] dark:bg-[#0C0D0E]/90">
+      <div className="flex h-16 items-center gap-3 border-b border-slate-200/70 px-5 dark:border-[#202425]">
         <Link href="/" className="flex items-center gap-3">
-          <img
-            src="/nexfix-logo.png"
-            alt="NexFix Logo"
-            className="h-8 w-auto object-contain"
-          />
+          <BrandLogo className="h-8 w-auto object-contain" />
           <div className="flex flex-col">
             <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-none">
               NexFix
@@ -122,11 +119,11 @@ export function DashboardSidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-slate-200/70 p-4 dark:border-slate-800/50">
+      <div className="border-t border-slate-200/70 p-4 dark:border-[#202425]">
         <button
           type="button"
           onClick={toggleTheme}
-          className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200/80 bg-white/60 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-800/50 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
+          className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200/80 bg-white/60 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
         >
           {theme === "light" ? <MoonIcon /> : <SunIcon />}
           {theme === "light" ? "Dark mode" : "Light mode"}

@@ -3,22 +3,19 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <main className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
+    <main className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0C0D0E] dark:text-slate-100">
       <AuthBrandPanel />
 
       <div className="flex flex-1 items-center justify-center px-4 py-16 sm:px-6">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <img
-              src="/nexfix-logo.png"
-              alt="NexFix Logo"
-              className="h-10 w-auto object-contain"
-            />
+            <BrandLogo className="h-10 w-auto object-contain" />
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-none">
                 NexFix
@@ -49,7 +46,7 @@ export default function SignUpPage() {
                   id="first-name"
                   type="text"
                   placeholder="Arun"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-white dark:placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -63,7 +60,7 @@ export default function SignUpPage() {
                   id="last-name"
                   type="text"
                   placeholder="Kumar"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-white dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -79,7 +76,7 @@ export default function SignUpPage() {
                 id="org"
                 type="text"
                 placeholder="Sri Lakshmi Chit Funds"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-white dark:placeholder:text-slate-500"
               />
             </div>
 
@@ -94,7 +91,7 @@ export default function SignUpPage() {
                 id="email"
                 type="email"
                 placeholder="you@branch.com"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-white dark:placeholder:text-slate-500"
               />
             </div>
 
@@ -110,7 +107,7 @@ export default function SignUpPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="At least 8 characters"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800 dark:bg-[#121212] dark:text-white dark:placeholder:text-slate-500"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-white dark:placeholder:text-slate-500"
                 />
                 <button
                   type="button"

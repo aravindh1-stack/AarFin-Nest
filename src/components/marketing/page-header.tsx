@@ -8,7 +8,7 @@ export function PageHeader({
   description: string;
 }) {
   return (
-    <div className="relative overflow-hidden border-b border-slate-200/70 px-4 pb-16 pt-14 sm:px-6 lg:px-8 dark:border-slate-800/50">
+    <div className="relative overflow-hidden border-b border-slate-200/70 px-4 pb-16 pt-14 sm:px-6 lg:px-8 dark:border-[#202425]">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-teal-500/10 blur-3xl dark:bg-teal-500/15" />
       </div>

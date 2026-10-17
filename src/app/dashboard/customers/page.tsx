@@ -171,7 +171,7 @@ export default function CustomersPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search member, phone, code..."
-              className="w-full rounded-lg border border-slate-200/80 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-slate-800/50 dark:bg-[#121212] dark:text-slate-200 dark:placeholder:text-slate-500"
+              className="w-full rounded-lg border border-slate-200/80 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 dark:placeholder:text-slate-500"
             />
           </div>
 
@@ -191,7 +191,7 @@ export default function CustomersPage() {
             <SkeletonBlock key={i} className="h-32 w-full rounded-2xl" />
           ))
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-8 text-center text-xs text-slate-500 dark:border-slate-800/50 dark:bg-[#121212]/70">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-8 text-center text-xs text-slate-500 dark:border-[#202425] dark:bg-[#151718]/70">
             No members found matching this search.
           </div>
         ) : (
@@ -207,7 +207,7 @@ export default function CustomersPage() {
             return (
               <div
                 key={c.id}
-                className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm dark:border-slate-800/60 dark:bg-[#121212]"
+                className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm dark:border-[#202425] dark:bg-[#151718]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
@@ -239,7 +239,7 @@ export default function CustomersPage() {
                   </span>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs dark:border-slate-800/50">
+                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs dark:border-[#202425]">
                   <span className="text-[11px] text-slate-400">
                     Joined: {c.joining_date || "Aug 2026"}
                   </span>
@@ -263,7 +263,7 @@ export default function CustomersPage() {
       </div>
 
       {/* DESKTOP / TABLET TABLE (Visible md and above) */}
-      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm md:block dark:border-slate-800/50 dark:bg-[#121212]/70">
+      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm md:block dark:border-[#202425] dark:bg-[#151718]/70">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50/80 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
@@ -279,7 +279,7 @@ export default function CustomersPage() {
             <tbody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                  <tr key={i} className="border-t border-slate-200/70 dark:border-[#202425]">
                     <td colSpan={6} className="px-5 py-4">
                       <SkeletonBlock className="h-7 w-full rounded-lg" />
                     </td>
@@ -304,7 +304,7 @@ export default function CustomersPage() {
                   return (
                     <tr
                       key={c.id}
-                      className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02]"
+                      className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-[#202425] dark:hover:bg-white/[0.02]"
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
@@ -350,7 +350,7 @@ export default function CustomersPage() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xl dark:border-slate-800/50 dark:bg-[#121212] max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xl dark:border-[#202425] dark:bg-[#151718] max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Enroll New Customer / Member
             </h3>
@@ -373,7 +373,7 @@ export default function CustomersPage() {
                     {isEditSeq ? "⚡ Auto-Sequence" : "✏️ Edit Number"}
                   </button>
                 </div>
-                <div className="mt-1 flex items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-[#000000]">
+                <div className="mt-1 flex items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-[#202425] dark:bg-[#0C0D0E]">
                   <span className="shrink-0 whitespace-nowrap select-none bg-slate-200/80 px-3 py-2.5 font-mono font-extrabold text-slate-700 dark:bg-white/10 dark:text-teal-400">
                     {prefixCode}
                   </span>
@@ -405,7 +405,7 @@ export default function CustomersPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Arun Kumar"
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   />
                 </div>
                 <div>
@@ -418,7 +418,7 @@ export default function CustomersPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 98765 43210"
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   />
                 </div>
               </div>
@@ -432,7 +432,7 @@ export default function CustomersPage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Door No, Street, Landmark, City"
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                 />
               </div>
 
@@ -444,7 +444,7 @@ export default function CustomersPage() {
                   <select
                     value={selectedBatchId}
                     onChange={(e) => setSelectedBatchId(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   >
                     <option value="">Select Scheme Batch...</option>
                     {batches.map((b) => (
@@ -462,7 +462,7 @@ export default function CustomersPage() {
                   <select
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   >
                     <option value="">Select Route Group...</option>
                     {groups.map((g) => (
@@ -482,7 +482,7 @@ export default function CustomersPage() {
                   type="date"
                   value={joiningDate}
                   onChange={(e) => setJoiningDate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-[#000000] dark:text-white font-semibold"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-semibold"
                 />
               </div>
 
@@ -497,7 +497,7 @@ export default function CustomersPage() {
                     className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
                       lateJoinerPolicy === "OPTION_A"
                         ? "border-teal-500 bg-teal-500/10 text-teal-900 dark:text-teal-200"
-                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-slate-800 dark:bg-white/[0.02] dark:text-slate-400"
+                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-400"
                     }`}
                   >
                     <input
@@ -520,7 +520,7 @@ export default function CustomersPage() {
                     className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
                       lateJoinerPolicy === "OPTION_B"
                         ? "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200"
-                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-slate-800 dark:bg-white/[0.02] dark:text-slate-400"
+                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-400"
                     }`}
                   >
                     <input
@@ -543,7 +543,7 @@ export default function CustomersPage() {
                     className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
                       lateJoinerPolicy === "OPTION_C"
                         ? "border-sky-500 bg-sky-500/10 text-sky-900 dark:text-sky-200"
-                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-slate-800 dark:bg-white/[0.02] dark:text-slate-400"
+                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-400"
                     }`}
                   >
                     <input
@@ -567,7 +567,7 @@ export default function CustomersPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 dark:border-slate-800 dark:text-slate-400"
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 dark:border-[#202425] dark:text-slate-400"
                 >
                   Cancel
                 </button>

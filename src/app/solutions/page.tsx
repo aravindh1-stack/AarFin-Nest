@@ -79,7 +79,7 @@ const capabilities = [
 
 export default function SolutionsPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000000] dark:text-slate-100">
+    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0C0D0E] dark:text-slate-100">
       <Navbar />
 
       <PageHeader
@@ -94,7 +94,7 @@ export default function SolutionsPage() {
             {schemes.map((scheme) => (
               <article
                 key={scheme.title}
-                className="flex flex-col rounded-2xl border border-slate-200/80 bg-white/70 p-7 shadow-sm dark:border-slate-800/50 dark:bg-[#121212]/70"
+                className="flex flex-col rounded-2xl border border-slate-200/80 bg-white/70 p-7 shadow-sm dark:border-[#202425] dark:bg-[#151718]/70"
               >
                 <span className="inline-flex w-fit items-center rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
                   {scheme.tag}
@@ -105,7 +105,7 @@ export default function SolutionsPage() {
                 <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                   {scheme.description}
                 </p>
-                <ul className="mt-5 space-y-2.5 border-t border-slate-200/70 pt-5 dark:border-slate-800/50">
+                <ul className="mt-5 space-y-2.5 border-t border-slate-200/70 pt-5 dark:border-[#202425]">
                   {scheme.points.map((point) => (
                     <li
                       key={point}
@@ -122,7 +122,7 @@ export default function SolutionsPage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200/70 bg-white/40 px-4 py-20 sm:px-6 lg:px-8 dark:border-slate-800/50 dark:bg-white/[0.02]">
+      <section className="border-t border-slate-200/70 bg-white/40 px-4 py-20 sm:px-6 lg:px-8 dark:border-[#202425] dark:bg-white/[0.02]">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-12 max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
@@ -137,7 +137,7 @@ export default function SolutionsPage() {
             {capabilities.map((cap) => (
               <div
                 key={cap.title}
-                className="group rounded-2xl border border-slate-200/80 bg-white/70 p-6 transition duration-300 hover:-translate-y-1 hover:border-teal-500/30 hover:shadow-xl hover:shadow-teal-500/10 dark:border-slate-800/50 dark:bg-[#121212]/70 dark:hover:border-teal-500/30"
+                className="group rounded-2xl border border-slate-200/80 bg-white/70 p-6 transition duration-300 hover:-translate-y-1 hover:border-teal-500/30 hover:shadow-xl hover:shadow-teal-500/10 dark:border-[#202425] dark:bg-[#151718]/70 dark:hover:border-teal-500/30"
               >
                 <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-lg text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
                   {cap.icon}

@@ -70,8 +70,8 @@ export function RecentActivityTable() {
   }, []);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 dark:border-slate-800/50 dark:bg-[#121212]/70">
-      <div className="flex items-center justify-between border-b border-slate-200/70 px-5 py-4 dark:border-slate-800/50">
+    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 dark:border-[#202425] dark:bg-[#151718]/70">
+      <div className="flex items-center justify-between border-b border-slate-200/70 px-5 py-4 dark:border-[#202425]">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white">
           Recent Collections
         </h3>
@@ -98,7 +98,7 @@ export function RecentActivityTable() {
           <tbody>
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i} className="border-t border-slate-200/70 dark:border-slate-800/50">
+                <tr key={i} className="border-t border-slate-200/70 dark:border-[#202425]">
                   <td colSpan={6} className="px-5 py-3.5">
                     <SkeletonBlock className="h-6 w-full rounded-lg" />
                   </td>
@@ -114,7 +114,7 @@ export function RecentActivityTable() {
               rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-slate-800/50 dark:hover:bg-white/[0.02]"
+                  className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-[#202425] dark:hover:bg-white/[0.02]"
                 >
                   <td className="px-5 py-3.5 font-medium text-slate-800 dark:text-slate-200">
                     {row.member}

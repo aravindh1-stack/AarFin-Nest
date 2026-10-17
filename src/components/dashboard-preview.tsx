@@ -57,8 +57,8 @@ export function DashboardPreview() {
     <div className="relative mx-auto mt-12 max-w-5xl px-4 sm:px-0">
       <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-teal-500/20 via-emerald-500/10 to-cyan-500/20 blur-2xl dark:from-teal-500/30 dark:via-emerald-500/15 dark:to-cyan-500/20" />
 
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-xl dark:border-slate-800/50 dark:bg-[#121212]/90 dark:shadow-black/40">
-        <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3 dark:border-slate-800/50">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-xl dark:border-[#202425] dark:bg-[#151718]/90 dark:shadow-black/40">
+        <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3 dark:border-[#202425]">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
             <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
@@ -76,7 +76,7 @@ export function DashboardPreview() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-3 transition hover:border-teal-500/30 hover:shadow-lg hover:shadow-teal-500/5 dark:border-slate-800/50 dark:bg-slate-900/50 dark:hover:border-teal-500/30"
+              className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-3 transition hover:border-teal-500/30 hover:shadow-lg hover:shadow-teal-500/5 dark:border-[#202425] dark:bg-slate-900/50 dark:hover:border-teal-500/30"
             >
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {stat.label}
@@ -91,7 +91,7 @@ export function DashboardPreview() {
           ))}
         </div>
 
-        <div className="border-t border-slate-200/70 p-4 dark:border-slate-800/50">
+        <div className="border-t border-slate-200/70 p-4 dark:border-[#202425]">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
               Recent FIFO Allocations
@@ -101,7 +101,7 @@ export function DashboardPreview() {
             </span>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200/70 dark:border-slate-800/50">
+          <div className="overflow-x-auto rounded-xl border border-slate-200/70 dark:border-[#202425]">
             {recentRows.length === 0 ? (
               <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
                 No recent transactions recorded in database.
@@ -120,7 +120,7 @@ export function DashboardPreview() {
                   {recentRows.map((row, idx) => (
                     <tr
                       key={idx}
-                      className="border-t border-slate-200/70 dark:border-slate-800/50"
+                      className="border-t border-slate-200/70 dark:border-[#202425]"
                     >
                       <td className="px-3 py-2.5 font-medium text-slate-800 dark:text-slate-200">
                         {row.member}

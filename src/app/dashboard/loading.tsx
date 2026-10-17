@@ -3,7 +3,7 @@ import { SkeletonBlock } from "@/components/skeleton-block";
 export default function DashboardLoading() {
   return (
     <div>
-      <div className="border-b border-slate-200/70 px-4 py-4 sm:px-6 lg:px-8 dark:border-slate-800/50">
+      <div className="border-b border-slate-200/70 px-4 py-4 sm:px-6 lg:px-8 dark:border-[#202425]">
         <SkeletonBlock className="h-6 w-40" />
         <SkeletonBlock className="mt-2 h-4 w-64" />
       </div>

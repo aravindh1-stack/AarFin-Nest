@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { TrendingUp, ShieldCheck, DollarSign } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function PageLoadingOverlay() {
   const pathname = usePathname();
@@ -29,13 +30,9 @@ export default function PageLoadingOverlay() {
         {/* Pulsing Finance Icon & Logo Glow */}
         <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#0F766E] to-emerald-500 flex items-center justify-center shadow-lg shadow-[#0F766E]/40 animate-pulse">
           <div className="absolute -inset-1 rounded-2xl bg-[#0F766E]/40 blur-sm animate-ping opacity-75"></div>
-          <Image
-            src="/aarga-logo.png"
-            alt="AarFin Logo"
-            width={42}
-            height={42}
-            className="object-contain relative z-10 p-0.5"
-            priority
+          <BrandLogo
+            variant="dark"
+            className="w-10 h-10 object-contain relative z-10 p-0.5"
           />
         </div>
 

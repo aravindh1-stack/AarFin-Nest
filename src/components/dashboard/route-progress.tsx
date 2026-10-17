@@ -41,7 +41,7 @@ export function RouteProgress() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 dark:border-slate-800/50 dark:bg-[#121212]/70">
+    <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 dark:border-[#202425] dark:bg-[#151718]/70">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white">
           Today&apos;s Route Progress

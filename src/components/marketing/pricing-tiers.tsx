@@ -59,7 +59,7 @@ export function PricingTiers() {
 
   return (
     <div>
-      <div className="mx-auto mb-12 flex w-fit items-center gap-1 rounded-full border border-slate-200/80 bg-white/70 p-1 dark:border-slate-800/50 dark:bg-[#121212]/70">
+      <div className="mx-auto mb-12 flex w-fit items-center gap-1 rounded-full border border-slate-200/80 bg-white/70 p-1 dark:border-[#202425] dark:bg-[#151718]/70">
         {(["monthly", "annual"] as const).map((option) => (
           <button
             key={option}
@@ -95,8 +95,8 @@ export function PricingTiers() {
               key={tier.name}
               className={`relative flex flex-col rounded-2xl p-7 ${
                 tier.highlight
-                  ? "border-2 border-teal-500/50 bg-white shadow-2xl shadow-teal-500/10 dark:bg-[#121212]"
-                  : "border border-slate-200/80 bg-white/70 dark:border-slate-800/50 dark:bg-[#121212]/70"
+                  ? "border-2 border-teal-500/50 bg-white shadow-2xl shadow-teal-500/10 dark:bg-[#151718]"
+                  : "border border-slate-200/80 bg-white/70 dark:border-[#202425] dark:bg-[#151718]/70"
               }`}
             >
               {tier.highlight && (
@@ -140,7 +140,7 @@ export function PricingTiers() {
                 {tier.cta}
               </button>
 
-              <ul className="mt-7 space-y-3 border-t border-slate-200/70 pt-6 dark:border-slate-800/50">
+              <ul className="mt-7 space-y-3 border-t border-slate-200/70 pt-6 dark:border-[#202425]">
                 {tier.features.map((feature) => (
                   <li
                     key={feature}

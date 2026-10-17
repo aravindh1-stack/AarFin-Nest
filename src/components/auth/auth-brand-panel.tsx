@@ -4,9 +4,11 @@ const highlights = [
   "Multi-branch, role-based access",
 ];
 
+import { BrandLogo } from "@/components/brand-logo";
+
 export function AuthBrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-gradient-to-br from-teal-800 via-teal-900 to-[#000000] lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-12">
+    <div className="relative hidden overflow-hidden bg-gradient-to-br from-teal-800 via-teal-900 to-[#0C0D0E] lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-12">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-teal-500/20 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
@@ -21,11 +23,7 @@ export function AuthBrandPanel() {
       </div>
 
       <div className="relative flex items-center gap-3">
-        <img
-          src="/nexfix-logo.png"
-          alt="NexFix Logo"
-          className="h-10 w-auto object-contain"
-        />
+        <BrandLogo variant="dark" className="h-10 w-auto object-contain" />
         <div className="flex flex-col">
           <span className="text-xl font-bold tracking-tight text-white leading-none">
             NexFix

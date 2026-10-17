@@ -20,7 +20,7 @@ export function PageLoader() {
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#000000] transition-opacity duration-400 ease-out ${
+      className={`fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#0C0D0E] transition-opacity duration-400 ease-out ${
         fading ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >

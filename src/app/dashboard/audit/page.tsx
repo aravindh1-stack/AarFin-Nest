@@ -32,8 +32,8 @@ export default function AuditPage() {
       />
 
       <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm dark:border-slate-800/50 dark:bg-[#121212]/70">
-          <div className="flex items-center justify-between border-b border-slate-200/70 p-4 dark:border-slate-800/50">
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm dark:border-[#202425] dark:bg-[#151718]/70">
+          <div className="flex items-center justify-between border-b border-slate-200/70 p-4 dark:border-[#202425]">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               System Security & Transaction Audit Trail
             </h3>
@@ -53,7 +53,7 @@ export default function AuditPage() {
               No audit events currently recorded in database.
             </p>
           ) : (
-            <div className="divide-y divide-slate-200/70 dark:divide-slate-800/50">
+            <div className="divide-y divide-slate-200/70 dark:divide-[#202425]">
               {logs.map((log, i) => (
                 <div
                   key={log.id || i}

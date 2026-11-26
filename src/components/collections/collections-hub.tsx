@@ -286,21 +286,21 @@ export function CollectionsHub() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search member name, ID no, phone, route, scheme..."
-            className="w-full rounded-lg border border-slate-200/80 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 dark:placeholder:text-slate-500"
+            placeholder="Search member name, ID, phone, route..."
+            className="w-full min-h-[44px] rounded-xl border border-slate-200/80 bg-white py-2 pl-9 pr-3 text-base sm:text-sm text-slate-800 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 dark:placeholder:text-slate-500"
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth">
           {filters.map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
+              className={`min-h-[40px] shrink-0 rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer flex items-center justify-center ${
                 filter === f
                   ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
-                  : "border border-slate-200/80 text-slate-600 hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:text-slate-400 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
+                  : "border border-slate-200/90 bg-white/70 text-slate-700 hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
               }`}
             >
               {f}
@@ -373,10 +373,10 @@ export function CollectionsHub() {
               <div className="mt-3 border-t border-slate-100 pt-2.5 dark:border-[#202425]">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-xl bg-teal-700/10 px-3 py-2 text-xs font-bold text-teal-700 transition hover:bg-teal-700 hover:text-white dark:bg-teal-400/10 dark:text-teal-300 dark:hover:bg-teal-500 dark:hover:text-slate-900"
+                  className="flex w-full min-h-[44px] items-center justify-between rounded-xl bg-teal-700/10 px-4 py-2 text-xs font-bold text-teal-700 transition hover:bg-teal-700 hover:text-white dark:bg-teal-400/10 dark:text-teal-300 dark:hover:bg-teal-500 dark:hover:text-slate-900 cursor-pointer"
                 >
                   <span>Collect Payment & Ledger</span>
-                  <span className="text-sm">→</span>
+                  <span className="text-sm font-bold">→</span>
                 </button>
               </div>
             </div>

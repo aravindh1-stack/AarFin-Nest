@@ -216,12 +216,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content Area: padded for desktop sidebar and padded bottom for mobile bottom nav */}
-        <div className="pb-24 lg:pb-8 lg:pl-64">{children}</div>
+        <div className="pb-28 lg:pb-8 lg:pl-64 min-w-0">{children}</div>
 
-        {/* Mobile Bottom Navigation Bar (Thumb Friendly) */}
+        {/* Mobile Bottom Navigation Bar (Thumb Friendly with Safe Area support) */}
         <nav
           aria-label="Mobile Bottom Navigation"
-          className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-slate-200/80 bg-white/95 px-2 backdrop-blur-xl lg:hidden dark:border-[#202425] dark:bg-[#0C0D0E]/95"
+          className="fixed bottom-0 left-0 right-0 z-40 flex h-16 pb-[env(safe-area-inset-bottom,0px)] items-center justify-around border-t border-slate-200/80 bg-white/95 px-2 backdrop-blur-xl lg:hidden dark:border-[#202425] dark:bg-[#0C0D0E]/95"
         >
           {mainNavTabs.map((tab) => {
             const active = pathname === tab.href;

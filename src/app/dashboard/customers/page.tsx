@@ -35,6 +35,7 @@ export default function CustomersPage() {
   const [query, setQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   // Form State
   const [fullName, setFullName] = useState("");
@@ -104,6 +105,7 @@ export default function CustomersPage() {
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setFormError("");
 
     const matchedBatch = batches.find((b) => b.id === selectedBatchId);
     const matchedGroup = groups.find((g) => g.id === selectedGroupId);
@@ -137,9 +139,13 @@ export default function CustomersPage() {
         setAddress("");
         setIdProof("");
         loadData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setFormError(data.error || "Failed to enroll member. Please check input details.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error enrolling member:", err);
+      setFormError(`Network error: ${err.message || "Could not reach server"}`);
     } finally {
       setSubmitting(false);
     }
@@ -349,20 +355,37 @@ export default function CustomersPage() {
     </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xl dark:border-[#202425] dark:bg-[#151718] max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Enroll New Customer / Member
-            </h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Enter member personal details and assign scheme batch & route group.
-            </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-3 sm:p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-2xl dark:border-[#202425] dark:bg-[#151718] max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200/70 pb-3 dark:border-[#202425]">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Enroll New Customer / Member
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Enter member personal details and assign scheme batch & route group.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
 
-            <form onSubmit={handleEnroll} className="mt-4 space-y-3 text-xs">
-              {/* Protected Member ID UI */}
+            {formError && (
+              <div className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                ⚠️ {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleEnroll} className="mt-4 space-y-3.5 text-xs">
+              {/* Member ID UI */}
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
                     Member ID Code
                   </label>
                   <button
@@ -373,7 +396,7 @@ export default function CustomersPage() {
                     {isEditSeq ? "⚡ Auto-Sequence" : "✏️ Edit Number"}
                   </button>
                 </div>
-                <div className="mt-1 flex items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-[#202425] dark:bg-[#0C0D0E]">
+                <div className="mt-1 flex items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-[#202425] dark:bg-[#0C0D0E]">
                   <span className="shrink-0 whitespace-nowrap select-none bg-slate-200/80 px-3 py-2.5 font-mono font-extrabold text-slate-700 dark:bg-white/10 dark:text-teal-400">
                     {prefixCode}
                   </span>
@@ -384,19 +407,19 @@ export default function CustomersPage() {
                     value={customSeqNum}
                     onChange={(e) => setCustomSeqNum(e.target.value.replace(/\D/g, ""))}
                     placeholder="001"
-                    className={`w-full bg-transparent px-3 py-2.5 font-mono font-bold outline-none text-slate-900 dark:text-white ${
+                    className={`w-full min-h-[44px] bg-transparent px-3 py-2 font-mono font-bold outline-none text-slate-900 dark:text-white ${
                       !isEditSeq ? "cursor-not-allowed text-slate-500" : "focus:ring-2 focus:ring-teal-500"
                     }`}
                   />
                 </div>
-                <p className="mt-1 text-[10px] text-slate-400">
-                  Protected System Format: <span className="font-mono font-bold text-slate-600 dark:text-slate-300">{prefixCode}[Number]</span> (Prefix <span className="font-mono font-bold text-teal-600 dark:text-teal-400">{prefixCode}</span> is locked; edit number only).
+                <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                  Format: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{prefixCode}[Number]</span>
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
                     Full Name *
                   </label>
                   <input
@@ -405,26 +428,26 @@ export default function CustomersPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Arun Kumar"
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
                     Phone Number *
                   </label>
                   <input
-                    type="text"
+                    type="tel"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 98765 43210"
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
                   Address
                 </label>
                 <input
@@ -432,19 +455,19 @@ export default function CustomersPage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Door No, Street, Landmark, City"
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                  className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
                     Scheme Batch
                   </label>
                   <select
                     value={selectedBatchId}
                     onChange={(e) => setSelectedBatchId(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   >
                     <option value="">Select Scheme Batch...</option>
                     {batches.map((b) => (
@@ -456,13 +479,13 @@ export default function CustomersPage() {
                 </div>
 
                 <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
                     Route Group
                   </label>
                   <select
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   >
                     <option value="">Select Route Group...</option>
                     {groups.map((g) => (
@@ -475,20 +498,20 @@ export default function CustomersPage() {
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
                   Joining Date
                 </label>
                 <input
                   type="date"
                   value={joiningDate}
                   onChange={(e) => setJoiningDate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-semibold"
+                  className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-semibold"
                 />
               </div>
 
               {/* Late Joiner Past Cycles Policy Selector */}
               <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
                   Past Cycles Policy for Late Joiners
                 </label>
                 <div className="mt-1.5 space-y-2">
@@ -497,7 +520,7 @@ export default function CustomersPage() {
                     className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
                       lateJoinerPolicy === "OPTION_A"
                         ? "border-teal-500 bg-teal-500/10 text-teal-900 dark:text-teal-200"
-                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-400"
+                        : "border-slate-200 bg-slate-50/50 text-slate-700 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-300"
                     }`}
                   >
                     <input
@@ -508,7 +531,7 @@ export default function CustomersPage() {
                       className="mt-0.5 accent-teal-600"
                     />
                     <div>
-                      <p className="font-bold text-xs">Option A: Start Fresh from Joining Date (Dynamic Timeline)</p>
+                      <p className="font-bold text-xs">Option A: Start Fresh from Joining Date</p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
                         Cycle #1 starts on joining date. No past dues carried over.
                       </p>
@@ -520,7 +543,7 @@ export default function CustomersPage() {
                     className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
                       lateJoinerPolicy === "OPTION_B"
                         ? "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200"
-                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-400"
+                        : "border-slate-200 bg-slate-50/50 text-slate-700 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-300"
                     }`}
                   >
                     <input
@@ -531,7 +554,7 @@ export default function CustomersPage() {
                       className="mt-0.5 accent-amber-600"
                     />
                     <div>
-                      <p className="font-bold text-xs">Option B: Carry Previous Dues as Pending (Carried Overdue)</p>
+                      <p className="font-bold text-xs">Option B: Carry Previous Dues as Pending</p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
                         Past cycles before joining date are flagged as Overdue Pending and added to dues.
                       </p>
@@ -543,7 +566,7 @@ export default function CustomersPage() {
                     className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition ${
                       lateJoinerPolicy === "OPTION_C"
                         ? "border-sky-500 bg-sky-500/10 text-sky-900 dark:text-sky-200"
-                        : "border-slate-200 bg-slate-50/50 text-slate-600 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-400"
+                        : "border-slate-200 bg-slate-50/50 text-slate-700 dark:border-[#202425] dark:bg-white/[0.02] dark:text-slate-300"
                     }`}
                   >
                     <input
@@ -563,18 +586,18 @@ export default function CustomersPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-200/70 dark:border-[#202425]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 dark:border-[#202425] dark:text-slate-400"
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-[#202425] dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-lg bg-teal-700 px-4 py-2 text-white font-semibold hover:bg-teal-600 dark:bg-teal-600"
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-teal-600 disabled:opacity-50 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
                 >
                   {submitting ? "Saving..." : "Enroll Member"}
                 </button>

@@ -24,8 +24,12 @@ const ThemeContext = createContext<ThemeContextValue>({
 function getInitialTheme(): Theme {
   if (typeof window === "undefined") return "dark";
 
-  const stored = window.localStorage.getItem("nexfix-theme");
+  const stored =
+    window.localStorage.getItem("aarfin-theme") ||
+    window.localStorage.getItem("aarfin_theme") ||
+    window.localStorage.getItem("nexfix-theme");
   if (stored === "light" || stored === "dark") return stored;
+  if (stored === "deep-black") return "dark";
 
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
@@ -45,7 +49,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme((current) => {
       const next = current === "light" ? "dark" : "light";
       document.documentElement.classList.toggle("dark", next === "dark");
-      window.localStorage.setItem("nexfix-theme", next);
+      window.localStorage.setItem("aarfin-theme", next);
       return next;
     });
   }, []);

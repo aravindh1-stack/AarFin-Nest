@@ -18,6 +18,8 @@ export default function SchemesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
   const [title, setTitle] = useState("");
   const [code, setCode] = useState("");
   const [amount, setAmount] = useState(5000);
@@ -47,6 +49,8 @@ export default function SchemesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setFormError("");
     try {
       const sDateStr = startDate || new Date().toISOString().split("T")[0];
       const [sYear, sMonth, sDay] = sDateStr.split("-").map(Number);
@@ -83,9 +87,15 @@ export default function SchemesPage() {
         setTitle("");
         setCode("");
         fetchBatches();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setFormError(data.error || "Failed to create scheme batch");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error creating scheme batch:", err);
+      setFormError(`Network error: ${err.message || "Could not connect to server"}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -167,69 +177,94 @@ export default function SchemesPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xl dark:border-[#202425] dark:bg-[#151718] max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Create New Scheme Batch
-            </h3>
-            <form onSubmit={handleCreate} className="mt-4 space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-3 sm:p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-2xl dark:border-[#202425] dark:bg-[#151718] max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200/70 pb-3 dark:border-[#202425]">
               <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300">
-                  Scheme Name
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Create New Scheme Batch
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Configure scheme installment parameters and collection cadence.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            {formError && (
+              <div className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                ⚠️ {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreate} className="mt-4 space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  Scheme Name *
                 </label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Palagara Seetu A2"
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                  placeholder="e.g. Daily Seetu B1"
+                  className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                 />
               </div>
+
               <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
                   Batch Code
                 </label>
                 <input
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  placeholder="e.g. PS-2026-01"
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                  placeholder="e.g. BTC-2026-01"
+                  className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
-                    Installment Amount (₹)
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                    Installment Amount (₹) *
                   </label>
                   <input
                     type="number"
                     required
+                    min={1}
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
                     placeholder="5000"
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-bold"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
-                    Total Cycles Count
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                    Total Cycles Count *
                   </label>
                   <input
                     type="number"
                     required
+                    min={1}
                     value={cycles}
                     onChange={(e) => setCycles(Number(e.target.value))}
                     placeholder="20"
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-bold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300">
-                  Collection Frequency Type
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  Collection Frequency
                 </label>
                 <div className="mt-1.5 grid grid-cols-3 gap-2">
                   {(["DAILY", "WEEKLY", "MONTHLY"] as const).map((freq) => (
@@ -237,10 +272,10 @@ export default function SchemesPage() {
                       key={freq}
                       type="button"
                       onClick={() => setFrequency(freq)}
-                      className={`rounded-lg py-2 text-xs font-bold transition cursor-pointer ${
+                      className={`min-h-[44px] rounded-xl py-2 text-xs font-bold transition cursor-pointer flex items-center justify-center ${
                         frequency === freq
-                          ? "bg-teal-700 text-white shadow dark:bg-teal-600"
-                          : "border border-slate-200 text-slate-600 hover:border-teal-500/40 dark:border-[#202425] dark:text-slate-400"
+                          ? "bg-teal-700 text-white shadow-md dark:bg-teal-600"
+                          : "border border-slate-200 text-slate-700 hover:border-teal-500/40 hover:bg-slate-50 dark:border-[#202425] dark:text-slate-300 dark:hover:bg-white/5"
                       }`}
                     >
                       {freq}
@@ -249,9 +284,9 @@ export default function SchemesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
                     Interval Gap ({frequency === "DAILY" ? "Days" : frequency === "WEEKLY" ? "Weeks" : "Months"})
                   </label>
                   <input
@@ -259,42 +294,44 @@ export default function SchemesPage() {
                     min={1}
                     value={intervalDays}
                     onChange={(e) => setIntervalDays(Math.max(1, Number(e.target.value)))}
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-semibold"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
                     Batch Start Date
                   </label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                   />
                 </div>
               </div>
 
-              {/* Dynamic Live Cadence Summary Helper Banner */}
+              {/* Cadence Summary Helper Banner */}
               <div className="rounded-xl border border-teal-500/20 bg-teal-500/5 p-3 text-xs leading-relaxed text-teal-800 dark:text-teal-300">
-                💡 <span className="font-semibold">Cadence Rule:</span> For this batch customers, the collection payment will become active once every{" "}
+                💡 <span className="font-semibold">Cadence Rule:</span> For this scheme, collections will be due once every{" "}
                 <span className="font-extrabold underline text-teal-700 dark:text-teal-200">
                   {intervalDays} {frequency === "DAILY" ? (intervalDays === 1 ? "day" : "days") : frequency === "WEEKLY" ? (intervalDays === 1 ? "week" : "weeks") : (intervalDays === 1 ? "month" : "months")}
                 </span>.
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-200/70 dark:border-[#202425]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 dark:border-[#202425] dark:text-slate-400"
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-[#202425] dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-teal-700 px-4 py-2 text-white font-semibold hover:bg-teal-600 dark:bg-teal-600"
+                  disabled={submitting}
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-teal-600 disabled:opacity-50 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
                 >
-                  Save Scheme
+                  {submitting ? "Saving..." : "Save Scheme"}
                 </button>
               </div>
             </form>

@@ -126,42 +126,42 @@ export function MemberDrawer({
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 pb-32 sm:pb-8">
               {feedbackMsg && (
                 <div className="mb-4 rounded-xl border border-teal-500/30 bg-teal-500/10 p-3 text-xs font-semibold text-teal-300">
                   {feedbackMsg}
                 </div>
               )}
 
-              <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-600 dark:text-slate-400">
                 <span className="rounded-full border border-teal-500/20 bg-teal-500/10 px-2.5 py-1 font-semibold text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
                   {member.scheme}
                 </span>
-                <span>{member.route}</span>
-                <span>{member.phone}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">{member.route}</span>
+                {member.phone && <span className="font-mono text-slate-600 dark:text-slate-400">📞 {member.phone}</span>}
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-4 dark:border-[#202425] dark:bg-white/[0.02]">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-3.5 sm:p-4 dark:border-[#202425] dark:bg-white/[0.02]">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Total Pending Dues
                   </p>
-                  <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
+                  <p className="mt-1 text-lg sm:text-xl font-extrabold text-rose-600 dark:text-rose-400">
                     {formatCurrency(member.totalPendingDues)}
                   </p>
                 </div>
-                <div className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-4 dark:border-[#202425] dark:bg-white/[0.02]">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <div className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-3.5 sm:p-4 dark:border-[#202425] dark:bg-white/[0.02]">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Advance Balance
                   </p>
-                  <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
+                  <p className="mt-1 text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
                     {formatCurrency(member.advanceBalance)}
                   </p>
                 </div>
               </div>
 
               {member.advanceBalance > 0 && (
-                <div className="mt-4 flex items-start gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5">
                   <svg
                     viewBox="0 0 20 20"
                     fill="currentColor"
@@ -174,29 +174,28 @@ export function MemberDrawer({
                     />
                   </svg>
                   <p className="text-xs leading-relaxed text-emerald-800 dark:text-emerald-300">
-                    This member is carrying an advance credit of{" "}
+                    Member is carrying an advance credit of{" "}
                     <span className="font-bold">
                       {formatCurrency(member.advanceBalance)}
                     </span>
-                    . It will be auto-applied to the next cycle before any new
-                    payment is requested.
+                    . It will auto-apply to the next cycle.
                   </p>
                 </div>
               )}
 
-              <div className="mt-6 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-[#202425] dark:bg-[#151718]">
+              <div className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#202425] dark:bg-[#151718]">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Quick FIFO Payment Entry
+                  Record Collection Payment
                 </h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                   {firstOpenInstallment
-                    ? `Will apply first to cycle #${firstOpenInstallment.cycle}, oldest open installment.`
-                    : "No open installments — payment will be held as advance credit."}
+                    ? `Applies to cycle #${firstOpenInstallment.cycle} (oldest open installment first).`
+                    : "No open dues — payment will be held as advance credit."}
                 </p>
 
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
                       ₹
                     </span>
                     <input
@@ -204,52 +203,56 @@ export function MemberDrawer({
                       inputMode="decimal"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-7 pr-3 text-sm text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white dark:placeholder:text-slate-500"
+                      placeholder="Enter amount"
+                      className="w-full min-h-[44px] rounded-xl border border-slate-200 bg-white py-2.5 pl-8 pr-3 text-base sm:text-sm font-bold text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={handleApplyPayment}
                     disabled={!amount || submitting}
-                    className="shrink-0 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-700/25 transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
+                    className="min-h-[44px] shrink-0 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-700/25 transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer flex items-center justify-center"
                   >
                     {submitting ? "Posting..." : "Apply Payment"}
                   </button>
                 </div>
 
-                <div className="mt-3.5 flex flex-wrap gap-1.5">
-                  <span className="w-full text-[11px] font-bold uppercase tracking-wider text-slate-400">Quick Presets:</span>
-                  {member.installments?.[0]?.amount && (
-                    <button
-                      type="button"
-                      onClick={() => setAmount(String(member.installments[0].amount))}
-                      className="rounded-lg border border-teal-500/30 bg-teal-500/10 px-2.5 py-1 text-xs font-bold text-teal-600 transition hover:bg-teal-500/20 dark:text-teal-400 cursor-pointer"
-                    >
-                      Cycle ({formatCurrency(member.installments[0].amount)})
-                    </button>
-                  )}
+                <div className="mt-3.5 space-y-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Quick Amount Presets:
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {member.installments?.[0]?.amount && (
+                      <button
+                        type="button"
+                        onClick={() => setAmount(String(member.installments[0].amount))}
+                        className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-teal-500/40 bg-teal-500/10 text-xs font-bold text-teal-700 hover:bg-teal-500/20 dark:text-teal-300 cursor-pointer flex items-center"
+                      >
+                        1 Cycle ({formatCurrency(member.installments[0].amount)})
+                      </button>
+                    )}
 
-                  {member.totalPendingDues > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setAmount(String(member.totalPendingDues))}
-                      className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-500/20 dark:text-rose-400 cursor-pointer"
-                    >
-                      Clear Dues ({formatCurrency(member.totalPendingDues)})
-                    </button>
-                  )}
+                    {member.totalPendingDues > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setAmount(String(member.totalPendingDues))}
+                        className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-xs font-bold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 cursor-pointer flex items-center"
+                      >
+                        Clear Dues ({formatCurrency(member.totalPendingDues)})
+                      </button>
+                    )}
 
-                  {[200, 500, 1000, 2000, 5000].map((quick) => (
-                    <button
-                      key={quick}
-                      type="button"
-                      onClick={() => setAmount(String(quick))}
-                      className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
-                    >
-                      {formatCurrency(quick)}
-                    </button>
-                  ))}
+                    {[200, 500, 1000, 2000, 5000].map((quick) => (
+                      <button
+                        key={quick}
+                        type="button"
+                        onClick={() => setAmount(String(quick))}
+                        className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:border-teal-500/50 hover:bg-white dark:border-[#202425] dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer flex items-center"
+                      >
+                        {formatCurrency(quick)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -330,11 +333,11 @@ export function MemberDrawer({
               )}
             </div>
 
-            <div className="border-t border-slate-200/70 px-6 py-4 dark:border-[#202425]">
+            <div className="border-t border-slate-200/70 p-4 sm:px-6 dark:border-[#202425] bg-white/90 dark:bg-[#0C0D0E]/90 backdrop-blur pb-safe">
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-teal-500/40 hover:text-teal-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-teal-500/40 dark:hover:text-teal-300 cursor-pointer"
+                className="w-full min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 cursor-pointer"
               >
                 Close Drawer
               </button>

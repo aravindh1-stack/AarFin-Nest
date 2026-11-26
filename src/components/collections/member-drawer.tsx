@@ -4,6 +4,7 @@ import { useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import type { Member } from "@/lib/mock-members";
 import { BrandLogo } from "@/components/brand-logo";
+import { type ReceiptData } from "@/components/collections/receipt-modal";
 
 function formatCurrency(value: number) {
   return `₹${value.toLocaleString("en-IN")}`;
@@ -13,10 +14,20 @@ export function MemberDrawer({
   member,
   onClose,
   onPaymentRecorded,
+  onNavigatePrev,
+  onNavigateNext,
+  currentIndex,
+  totalCount,
+  onReceiptGenerated,
 }: {
   member: Member | null;
   onClose: () => void;
   onPaymentRecorded?: () => void;
+  onNavigatePrev?: () => void;
+  onNavigateNext?: () => void;
+  currentIndex?: number;
+  totalCount?: number;
+  onReceiptGenerated?: (receipt: ReceiptData) => void;
 }) {
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -32,6 +43,8 @@ export function MemberDrawer({
     setSubmitting(true);
     setFeedbackMsg(null);
 
+    const paidVal = Number(amount);
+
     try {
       const receiptNo = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -40,7 +53,7 @@ export function MemberDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_id: (member as any).dbId || member.id,
-          amount_paid: Number(amount),
+          amount_paid: paidVal,
           payment_method: "CASH",
           receipt_no: receiptNo,
           notes: "Field Collection Payment Entry",
@@ -49,14 +62,39 @@ export function MemberDrawer({
       });
 
       if (res.ok) {
-        setFeedbackMsg(`✓ Payment of ₹${Number(amount).toLocaleString("en-IN")} recorded to DB!`);
+        setFeedbackMsg(`✓ Payment of ₹${paidVal.toLocaleString("en-IN")} recorded!`);
         setAmount("");
         if (onPaymentRecorded) {
           onPaymentRecorded();
         }
+
+        const remaining = Math.max(0, (member.totalPendingDues || 0) - paidVal);
+        const advance = paidVal > (member.totalPendingDues || 0) 
+          ? paidVal - (member.totalPendingDues || 0) 
+          : (member.advanceBalance || 0);
+
+        if (onReceiptGenerated) {
+          onReceiptGenerated({
+            receiptNo,
+            customerName: member.name,
+            customerCode: (member as any).customerCode || member.id,
+            phone: (member as any).phone || "",
+            amount: paidVal,
+            scheme: member.scheme,
+            route: member.route,
+            remainingDues: remaining,
+            advanceBalance: advance,
+            date: new Date().toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
+          });
+        }
+
         setTimeout(() => setFeedbackMsg(null), 4000);
       } else {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         setFeedbackMsg(`⚠️ Error: ${err.error || "Failed to record payment"}`);
       }
     } catch (error: any) {
@@ -125,6 +163,31 @@ export function MemberDrawer({
                 </svg>
               </button>
             </div>
+
+            {/* Sequential Route Navigation Bar */}
+            {typeof currentIndex === "number" && typeof totalCount === "number" && totalCount > 1 && (
+              <div className="flex items-center justify-between border-b border-slate-200/70 bg-slate-50/80 px-4 py-2 text-xs dark:border-[#202425] dark:bg-white/[0.02]">
+                <button
+                  type="button"
+                  disabled={!onNavigatePrev}
+                  onClick={onNavigatePrev}
+                  className="flex items-center gap-1 min-h-[36px] px-2.5 py-1 rounded-lg font-bold text-slate-700 transition hover:bg-slate-200/70 disabled:opacity-30 disabled:cursor-not-allowed dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer"
+                >
+                  <span>← Prev</span>
+                </button>
+                <span className="font-medium text-slate-500 dark:text-slate-400 text-[11px]">
+                  Member <span className="font-bold text-slate-900 dark:text-white">{currentIndex + 1}</span> of {totalCount}
+                </span>
+                <button
+                  type="button"
+                  disabled={!onNavigateNext}
+                  onClick={onNavigateNext}
+                  className="flex items-center gap-1 min-h-[36px] px-2.5 py-1 rounded-lg font-bold text-teal-700 transition hover:bg-teal-500/15 disabled:opacity-30 disabled:cursor-not-allowed dark:text-teal-400 dark:hover:bg-white/10 cursor-pointer"
+                >
+                  <span>Next →</span>
+                </button>
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 pb-32 sm:pb-8">
               {feedbackMsg && (
@@ -333,14 +396,24 @@ export function MemberDrawer({
               )}
             </div>
 
-            <div className="border-t border-slate-200/70 p-4 sm:px-6 dark:border-[#202425] bg-white/90 dark:bg-[#0C0D0E]/90 backdrop-blur pb-safe">
+            <div className="border-t border-slate-200/70 p-4 sm:px-6 dark:border-[#202425] bg-white/90 dark:bg-[#0C0D0E]/90 backdrop-blur pb-safe flex gap-2.5">
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 cursor-pointer"
+                className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 cursor-pointer"
               >
                 Close Drawer
               </button>
+              {onNavigateNext && (
+                <button
+                  type="button"
+                  onClick={onNavigateNext}
+                  className="flex-1 min-h-[44px] flex items-center justify-center gap-1 rounded-xl bg-teal-700 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
+                >
+                  <span>Next Member</span>
+                  <span>→</span>
+                </button>
+              )}
             </div>
           </>
         )}

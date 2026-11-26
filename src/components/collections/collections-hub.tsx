@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { type Member } from "@/lib/mock-members";
 import { MemberDrawer } from "@/components/collections/member-drawer";
 import { SkeletonBlock } from "@/components/skeleton-block";
+import { ReceiptModal, type ReceiptData } from "@/components/collections/receipt-modal";
 
 const filters = ["All", "Has Dues", "Has Advance", "Fully Paid"] as const;
 type Filter = (typeof filters)[number];
@@ -17,7 +18,11 @@ export function CollectionsHub() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
+  const [selectedRoute, setSelectedRoute] = useState("ALL");
+  const [selectedScheme, setSelectedScheme] = useState("ALL");
   const [selected, setSelected] = useState<Member | null>(null);
+  const [recordedReceipt, setRecordedReceipt] = useState<ReceiptData | null>(null);
+  const [quickPayingId, setQuickPayingId] = useState<string | null>(null);
 
   const loadCollectionsData = async () => {
     setLoading(true);
@@ -219,6 +224,22 @@ export function CollectionsHub() {
     loadCollectionsData();
   }, []);
 
+  const uniqueRoutes = useMemo(() => {
+    const set = new Set<string>();
+    memberList.forEach((m) => {
+      if (m.route) set.add(m.route);
+    });
+    return Array.from(set).sort();
+  }, [memberList]);
+
+  const uniqueSchemes = useMemo(() => {
+    const set = new Set<string>();
+    memberList.forEach((m) => {
+      if (m.scheme) set.add(m.scheme);
+    });
+    return Array.from(set).sort();
+  }, [memberList]);
+
   const filtered = useMemo(() => {
     return memberList.filter((member) => {
       const q = query.trim().toLowerCase();
@@ -229,7 +250,11 @@ export function CollectionsHub() {
         (filter === "Has Advance" && member.advanceBalance > 0) ||
         (filter === "Fully Paid" && member.totalPendingDues === 0);
 
-      if (!q) return matchesFilter;
+      const matchesRoute = selectedRoute === "ALL" || member.route === selectedRoute;
+      const matchesScheme = selectedScheme === "ALL" || member.scheme === selectedScheme;
+
+      if (!matchesFilter || !matchesRoute || !matchesScheme) return false;
+      if (!q) return true;
 
       // Match member name, scheme, route
       const nameMatch = member.name?.toLowerCase().includes(q);
@@ -251,7 +276,7 @@ export function CollectionsHub() {
         (memberCodeDigits.includes(numericQ) ||
           (memberCodeDigits.length > 0 && parseInt(memberCodeDigits, 10) === parseInt(numericQ, 10)));
 
-      const matchesQuery = Boolean(
+      return Boolean(
         nameMatch ||
         idMatch ||
         dbIdMatch ||
@@ -262,50 +287,229 @@ export function CollectionsHub() {
         schemeMatch ||
         routeMatch
       );
-
-      return matchesQuery && matchesFilter;
     });
-  }, [memberList, query, filter]);
+  }, [memberList, query, filter, selectedRoute, selectedScheme]);
+
+  const routeStats = useMemo(() => {
+    const targetList = selectedRoute === "ALL"
+      ? memberList
+      : memberList.filter((m) => m.route === selectedRoute);
+
+    const totalMembers = targetList.length;
+    const totalPendingDues = targetList.reduce((acc, m) => acc + (m.totalPendingDues || 0), 0);
+    const totalAdvances = targetList.reduce((acc, m) => acc + (m.advanceBalance || 0), 0);
+    const membersWithDues = targetList.filter((m) => m.totalPendingDues > 0).length;
+    const membersCleared = targetList.filter((m) => m.totalPendingDues === 0).length;
+
+    return {
+      totalMembers,
+      totalPendingDues,
+      totalAdvances,
+      membersWithDues,
+      membersCleared,
+      collectionRate: totalMembers > 0 ? Math.round((membersCleared / totalMembers) * 100) : 100,
+    };
+  }, [memberList, selectedRoute]);
+
+  const handleQuickPay = async (member: Member, amount: number) => {
+    if (!amount || quickPayingId) return;
+    setQuickPayingId(member.id);
+
+    try {
+      const receiptNo = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_id: (member as any).dbId || member.id,
+          amount_paid: amount,
+          payment_method: "CASH",
+          receipt_no: receiptNo,
+          notes: "1-Tap Quick Field Collection",
+          payment_date: new Date().toISOString(),
+        }),
+      });
+
+      if (res.ok) {
+        const remaining = Math.max(0, (member.totalPendingDues || 0) - amount);
+        const advance = amount > (member.totalPendingDues || 0)
+          ? amount - (member.totalPendingDues || 0)
+          : (member.advanceBalance || 0);
+
+        setRecordedReceipt({
+          receiptNo,
+          customerName: member.name,
+          customerCode: (member as any).customerCode || member.id,
+          phone: (member as any).phone || "",
+          amount,
+          scheme: member.scheme,
+          route: member.route,
+          remainingDues: remaining,
+          advanceBalance: advance,
+          date: new Date().toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+        });
+
+        await loadCollectionsData();
+      }
+    } catch (err) {
+      console.error("Error in quick pay:", err);
+    } finally {
+      setQuickPayingId(null);
+    }
+  };
+
+  const selectedIndex = selected ? filtered.findIndex((m) => m.id === selected.id) : -1;
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <svg
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-          >
-            <path
-              fillRule="evenodd"
-              d="M9 3.5a5.5 5.5 0 1 0 3.55 9.7l3.13 3.12a.75.75 0 1 0 1.06-1.06l-3.12-3.13A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z"
-              clipRule="evenodd"
+      {/* Top Search & Filter Bar */}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-xs">
+            <svg
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9 3.5a5.5 5.5 0 1 0 3.55 9.7l3.13 3.12a.75.75 0 1 0 1.06-1.06l-3.12-3.13A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search member name, ID, phone, route..."
+              className="w-full min-h-[44px] rounded-xl border border-slate-200/80 bg-white py-2 pl-9 pr-3 text-base sm:text-sm text-slate-800 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 dark:placeholder:text-slate-500"
             />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search member name, ID, phone, route..."
-            className="w-full min-h-[44px] rounded-xl border border-slate-200/80 bg-white py-2 pl-9 pr-3 text-base sm:text-sm text-slate-800 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 dark:placeholder:text-slate-500"
-          />
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth">
+            {filters.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                className={`min-h-[40px] shrink-0 rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer flex items-center justify-center ${
+                  filter === f
+                    ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
+                    : "border border-slate-200/90 bg-white/70 text-slate-700 hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth">
-          {filters.map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`min-h-[40px] shrink-0 rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer flex items-center justify-center ${
-                filter === f
-                  ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
-                  : "border border-slate-200/90 bg-white/70 text-slate-700 hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
-              }`}
+        {/* Route & Scheme Dropdown Selectors */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+              Route:
+            </span>
+            <select
+              value={selectedRoute}
+              onChange={(e) => setSelectedRoute(e.target.value)}
+              className="min-h-[40px] rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 cursor-pointer"
             >
-              {f}
+              <option value="ALL">All Routes ({uniqueRoutes.length})</option>
+              {uniqueRoutes.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+              Scheme:
+            </span>
+            <select
+              value={selectedScheme}
+              onChange={(e) => setSelectedScheme(e.target.value)}
+              className="min-h-[40px] rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 cursor-pointer"
+            >
+              <option value="ALL">All Schemes ({uniqueSchemes.length})</option>
+              {uniqueSchemes.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {(selectedRoute !== "ALL" || selectedScheme !== "ALL" || filter !== "All" || query) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedRoute("ALL");
+                setSelectedScheme("ALL");
+                setFilter("All");
+                setQuery("");
+              }}
+              className="min-h-[36px] px-2.5 text-xs font-semibold text-rose-600 hover:underline dark:text-rose-400 cursor-pointer"
+            >
+              Reset Filters
             </button>
-          ))}
+          )}
+        </div>
+      </div>
+
+      {/* Route Summary Progress Banner */}
+      <div className="mt-4 rounded-2xl border border-teal-500/20 bg-gradient-to-r from-teal-500/10 via-emerald-500/5 to-transparent p-4 dark:border-teal-500/20 dark:from-teal-950/30">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-600 text-white text-xs font-bold">
+                ◎
+              </span>
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">
+                {selectedRoute === "ALL" ? "All Routes Summary" : `Route: ${selectedRoute}`}
+              </h3>
+              <span className="rounded-full bg-teal-500/20 px-2 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">
+                {routeStats.totalMembers} Members
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+              {routeStats.membersCleared} of {routeStats.totalMembers} accounts cleared ({routeStats.collectionRate}% collected)
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs shrink-0">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
+                Total Due
+              </span>
+              <span className="font-extrabold text-rose-600 dark:text-rose-400 text-sm">
+                {formatCurrency(routeStats.totalPendingDues)}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
+                Total Adv
+              </span>
+              <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
+                +{formatCurrency(routeStats.totalAdvances)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200/80 dark:bg-white/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
+            style={{ width: `${routeStats.collectionRate}%` }}
+          />
         </div>
       </div>
 
@@ -317,75 +521,105 @@ export function CollectionsHub() {
           ))
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-8 text-center text-xs text-slate-500 dark:border-[#202425] dark:bg-[#151718]/70">
-            No members match this search.
+            No members match this route or filter.
           </div>
         ) : (
-          filtered.map((member) => (
-            <div
-              key={member.id}
-              onClick={() => setSelected(member)}
-              className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition active:scale-[0.99] dark:border-[#202425] dark:bg-[#151718] cursor-pointer"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-xs font-bold text-white shadow-sm">
-                    {member.initials}
+          filtered.map((member) => {
+            const cycleDueAmt = (member as any).installmentAmount || member.totalPendingDues || 500;
+            const isPaying = quickPayingId === member.id;
+
+            return (
+              <div
+                key={member.id}
+                onClick={() => setSelected(member)}
+                className="rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-sm transition active:scale-[0.99] dark:border-[#202425] dark:bg-[#151718] cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-xs font-bold text-white shadow-sm">
+                      {member.initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-slate-900 dark:text-white text-sm">
+                        {member.name}
+                      </p>
+                      <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                        ID: {(member as any).customerCode || member.id}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-slate-900 dark:text-white text-sm">
-                      {member.name}
-                    </p>
-                    <p className="text-[11px] font-mono text-slate-400">
-                      ID: {(member as any).customerCode || member.id}
-                    </p>
+
+                  <div className="shrink-0 text-right">
+                    {member.totalPendingDues > 0 ? (
+                      <span className="inline-block rounded-lg bg-rose-500/10 px-2 py-0.5 text-xs font-extrabold text-rose-600 dark:text-rose-400">
+                        {formatCurrency(member.totalPendingDues)} Due
+                      </span>
+                    ) : member.advanceBalance > 0 ? (
+                      <span className="inline-block rounded-lg bg-emerald-500/10 px-2 py-0.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                        +{formatCurrency(member.advanceBalance)} Adv
+                      </span>
+                    ) : (
+                      <span className="inline-block rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-white/5 dark:text-slate-400">
+                        Clear
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <div className="shrink-0 text-right">
+                {/* Scheme & Route Tags */}
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="rounded-md border border-teal-500/20 bg-teal-500/10 px-2 py-0.5 font-semibold text-teal-700 dark:text-teal-300">
+                    {member.scheme}
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">
+                    {member.route}
+                  </span>
+                </div>
+
+                {/* 1-Tap Quick Pay & Ledger Action Buttons */}
+                <div className="mt-3.5 flex items-center gap-2 border-t border-slate-100 pt-2.5 dark:border-[#202425]">
                   {member.totalPendingDues > 0 ? (
-                    <span className="inline-block rounded-lg bg-rose-500/10 px-2 py-0.5 text-xs font-extrabold text-rose-600 dark:text-rose-400">
-                      {formatCurrency(member.totalPendingDues)} Due
-                    </span>
-                  ) : member.advanceBalance > 0 ? (
-                    <span className="inline-block rounded-lg bg-emerald-500/10 px-2 py-0.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
-                      +{formatCurrency(member.advanceBalance)} Adv
-                    </span>
+                    <button
+                      type="button"
+                      disabled={isPaying}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleQuickPay(member, cycleDueAmt);
+                      }}
+                      className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-600/25 transition hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+                    >
+                      <span>{isPaying ? "Recording..." : `⚡ Pay ${formatCurrency(cycleDueAmt)}`}</span>
+                    </button>
                   ) : (
-                    <span className="inline-block rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-white/5 dark:text-slate-400">
-                      Clear
-                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelected(member);
+                      }}
+                      className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 cursor-pointer"
+                    >
+                      View Passbook
+                    </button>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => setSelected(member)}
+                    className="min-h-[44px] px-3.5 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-xs font-bold text-teal-700 hover:bg-slate-50 dark:border-[#202425] dark:bg-[#151718] dark:text-teal-300 cursor-pointer"
+                  >
+                    Ledger →
+                  </button>
                 </div>
               </div>
-
-              {/* Scheme & Route Tags */}
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="rounded-md border border-teal-500/20 bg-teal-500/10 px-2 py-0.5 font-semibold text-teal-700 dark:text-teal-300">
-                  {member.scheme}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span className="text-slate-600 dark:text-slate-400">
-                  {member.route}
-                </span>
-              </div>
-
-              {/* Action Button */}
-              <div className="mt-3 border-t border-slate-100 pt-2.5 dark:border-[#202425]">
-                <button
-                  type="button"
-                  className="flex w-full min-h-[44px] items-center justify-between rounded-xl bg-teal-700/10 px-4 py-2 text-xs font-bold text-teal-700 transition hover:bg-teal-700 hover:text-white dark:bg-teal-400/10 dark:text-teal-300 dark:hover:bg-teal-500 dark:hover:text-slate-900 cursor-pointer"
-                >
-                  <span>Collect Payment & Ledger</span>
-                  <span className="text-sm font-bold">→</span>
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
       {/* DESKTOP / TABLET TABLE (Visible md and above) */}
-      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 md:block dark:border-[#202425] dark:bg-[#151718]/70">
+      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm md:block dark:border-[#202425] dark:bg-[#151718]/70">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50/80 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
@@ -395,7 +629,7 @@ export function CollectionsHub() {
                 <th className="px-5 py-3 font-semibold">Route</th>
                 <th className="px-5 py-3 font-semibold">Pending Dues</th>
                 <th className="px-5 py-3 font-semibold">Advance</th>
-                <th className="px-5 py-3 text-right font-semibold">Action</th>
+                <th className="px-5 py-3 text-right font-semibold">Quick Action</th>
               </tr>
             </thead>
             <tbody>
@@ -408,60 +642,78 @@ export function CollectionsHub() {
                   </tr>
                 ))
               ) : (
-                filtered.map((member) => (
-                  <tr
-                    key={member.id}
-                    onClick={() => setSelected(member)}
-                    className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-[#202425] dark:hover:bg-white/[0.02] cursor-pointer"
-                  >
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-[11px] font-bold text-white">
-                          {member.initials}
+                filtered.map((member) => {
+                  const cycleDueAmt = (member as any).installmentAmount || member.totalPendingDues || 500;
+                  const isPaying = quickPayingId === member.id;
+
+                  return (
+                    <tr
+                      key={member.id}
+                      onClick={() => setSelected(member)}
+                      className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-[#202425] dark:hover:bg-white/[0.02] cursor-pointer"
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-[11px] font-bold text-white">
+                            {member.initials}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 dark:text-slate-100">
+                              {member.name}
+                            </p>
+                            <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                              ID: {(member as any).customerCode || member.id}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-slate-800 dark:text-slate-200">
-                            {member.name}
-                          </p>
-                          <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                            ID: {(member as any).customerCode || member.id}
-                          </p>
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-700 dark:text-slate-300">
+                        {member.scheme}
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-700 dark:text-slate-300">
+                        {member.route}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {member.totalPendingDues > 0 ? (
+                          <span className="font-extrabold text-rose-600 dark:text-rose-400">
+                            {formatCurrency(member.totalPendingDues)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {member.advanceBalance > 0 ? (
+                          <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                            +{formatCurrency(member.advanceBalance)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {member.totalPendingDues > 0 && (
+                            <button
+                              type="button"
+                              disabled={isPaying}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuickPay(member, cycleDueAmt);
+                              }}
+                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+                            >
+                              {isPaying ? "Saving..." : `⚡ Pay ${formatCurrency(cycleDueAmt)}`}
+                            </button>
+                          )}
+                          <span className="font-medium text-teal-600 dark:text-teal-400 text-xs">
+                            Ledger →
+                          </span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
-                      {member.scheme}
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">
-                      {member.route}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      {member.totalPendingDues > 0 ? (
-                        <span className="font-semibold text-rose-600 dark:text-rose-400">
-                          {formatCurrency(member.totalPendingDues)}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 dark:text-slate-500">
-                          —
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      {member.advanceBalance > 0 ? (
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                          {formatCurrency(member.advanceBalance)}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 dark:text-slate-500">
-                          —
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5 text-right font-medium text-teal-600 dark:text-teal-400">
-                      Collect & Ledger →
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  );
+                })
               )}
 
               {!loading && filtered.length === 0 && (
@@ -470,7 +722,7 @@ export function CollectionsHub() {
                     colSpan={6}
                     className="px-5 py-10 text-center text-sm text-slate-500 dark:text-slate-400"
                   >
-                    No members match this search.
+                    No members match this route or filter.
                   </td>
                 </tr>
               )}
@@ -479,11 +731,39 @@ export function CollectionsHub() {
         </div>
       </div>
 
+      {/* Member Ledger & Installment Drawer with Sequential Route Navigation */}
       <MemberDrawer
         member={selected}
         onClose={() => setSelected(null)}
         onPaymentRecorded={() => {
           loadCollectionsData();
+        }}
+        currentIndex={selectedIndex >= 0 ? selectedIndex : undefined}
+        totalCount={filtered.length}
+        onNavigatePrev={
+          selectedIndex > 0
+            ? () => setSelected(filtered[selectedIndex - 1])
+            : undefined
+        }
+        onNavigateNext={
+          selectedIndex >= 0 && selectedIndex < filtered.length - 1
+            ? () => setSelected(filtered[selectedIndex + 1])
+            : undefined
+        }
+        onReceiptGenerated={(receipt) => {
+          setRecordedReceipt(receipt);
+        }}
+      />
+
+      {/* Instant Digital WhatsApp & Print Receipt Modal */}
+      <ReceiptModal
+        receipt={recordedReceipt}
+        onClose={() => setRecordedReceipt(null)}
+        hasNext={Boolean(selected && selectedIndex >= 0 && selectedIndex < filtered.length - 1)}
+        onNext={() => {
+          if (selectedIndex >= 0 && selectedIndex < filtered.length - 1) {
+            setSelected(filtered[selectedIndex + 1]);
+          }
         }}
       />
     </div>

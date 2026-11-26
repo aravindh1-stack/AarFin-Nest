@@ -696,13 +696,13 @@ export function CollectionsHub() {
                                 e.stopPropagation();
                                 handleQuickPay(member, cycleDueAmt);
                               }}
-                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
                             >
-                              {isPaying ? "Saving..." : `⚡ Pay ${formatCurrency(cycleDueAmt)}`}
+                              {isPaying ? "Saving..." : `Collect ${formatCurrency(cycleDueAmt)}`}
                             </button>
                           )}
-                          <span className="font-medium text-teal-600 dark:text-teal-400 text-xs">
-                            Ledger →
+                          <span className="font-semibold text-teal-600 dark:text-teal-400 text-xs">
+                            Ledger
                           </span>
                         </div>
                       </td>

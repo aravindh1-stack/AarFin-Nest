@@ -16,7 +16,7 @@ export interface BrandLogoProps {
  */
 export function BrandLogo({
   className = "h-8 w-auto object-contain",
-  alt = "AarFin Nest Logo",
+  alt = "NexFix Logo",
   variant = "auto",
   priority = false,
 }: BrandLogoProps) {

@@ -5,6 +5,7 @@ import { StatusPill } from "@/components/status-pill";
 import type { Member } from "@/lib/mock-members";
 import { BrandLogo } from "@/components/brand-logo";
 import { type ReceiptData, generateWhatsAppUrl } from "@/components/collections/receipt-modal";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 function formatCurrency(value: number) {
   return `₹${value.toLocaleString("en-IN")}`;
@@ -102,10 +103,10 @@ export function MemberDrawer({
         setTimeout(() => setFeedbackMsg(null), 3500);
       } else {
         const err = await res.json().catch(() => ({}));
-        setFeedbackMsg(`⚠️ Error: ${err.error || "Failed to record payment"}`);
+        setFeedbackMsg(`Error: ${err.error || "Failed to record payment"}`);
       }
     } catch (error: any) {
-      setFeedbackMsg(`⚠️ Network error: ${error.message}`);
+      setFeedbackMsg(`Network error: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -159,7 +160,7 @@ export function MemberDrawer({
                       title="Previous Member"
                       className="h-8 w-8 flex items-center justify-center text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
                     >
-                      ‹
+                      <ChevronLeft className="h-4 w-4" />
                     </button>
                     <span className="text-[10px] font-bold px-1.5 text-slate-400">
                       {currentIndex + 1}/{totalCount}
@@ -171,7 +172,7 @@ export function MemberDrawer({
                       title="Next Member"
                       className="h-8 w-8 flex items-center justify-center text-xs font-bold text-teal-700 hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed dark:text-teal-400 dark:hover:bg-white/5 cursor-pointer"
                     >
-                      ›
+                      <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
                 )}
@@ -182,7 +183,7 @@ export function MemberDrawer({
                   aria-label="Close panel"
                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:border-[#202425] dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white cursor-pointer"
                 >
-                  ✕
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>

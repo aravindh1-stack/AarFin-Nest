@@ -1,8 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { Urbanist } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/page-loader";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import "./globals.css";
+
+const urbanist = Urbanist({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-urbanist",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -15,9 +23,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "AarFin Nest | Micro-Finance & Chit-Fund Management OS",
+  title: "NexFix | Autonomous Financial Operating System",
   description:
-    "Scale your micro-finance operations with smart oldest-dues-first allocation, scheme batches, and real-time field collection tracking.",
+    "Next-generation financial operations, multi-branch liquidity tracking, intelligent oldest-dues-first allocation, and real-time field ledger engine.",
 };
 
 export default function RootLayout({
@@ -28,10 +36,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="dark h-full antialiased"
+      className={`dark h-full antialiased ${urbanist.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-full font-sans antialiased text-slate-900 bg-[#F8FAFC] dark:bg-[#0C0D0E] dark:text-[#ECEDEE] selection:bg-teal-500/20">
+      <body className={`min-h-full ${urbanist.className} antialiased text-slate-900 bg-[#F8FAFC] dark:bg-[#0C0D0E] dark:text-[#ECEDEE] selection:bg-teal-500/20`}>
         <ThemeProvider>
           <PageLoader />
           <RouteProgressBar />

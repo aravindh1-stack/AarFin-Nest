@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { SkeletonBlock } from "@/components/skeleton-block";
+import {
+  Layers,
+  Sparkles,
+  Plus,
+  AlertCircle,
+  Info,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 
 interface Batch {
   id: string;
@@ -18,6 +27,15 @@ export default function SchemesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showAuctionModal, setShowAuctionModal] = useState(false);
+  const [selectedAuctionBatch, setSelectedAuctionBatch] = useState<Batch | null>(null);
+
+  // Auction simulation state
+  const [bidDiscount, setBidDiscount] = useState<number>(20000);
+  const [foremanPercent, setForemanPercent] = useState<number>(5);
+  const [winnerName, setWinnerName] = useState<string>("S. Meenakshi (CUST-082)");
+  const [auctionSuccess, setAuctionSuccess] = useState<boolean>(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [title, setTitle] = useState("");
@@ -27,7 +45,6 @@ export default function SchemesPage() {
 
   const [frequency, setFrequency] = useState<"DAILY" | "WEEKLY" | "MONTHLY">("WEEKLY");
   const [startDate, setStartDate] = useState(() => new Date().toISOString().split("T")[0]);
-
   const [intervalDays, setIntervalDays] = useState(1);
 
   const fetchBatches = async () => {
@@ -119,9 +136,10 @@ export default function SchemesPage() {
           <button
             type="button"
             onClick={() => setShowModal(true)}
-            className="rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
           >
-            + Create New Scheme
+            <Plus className="h-3.5 w-3.5" />
+            <span>Create New Scheme</span>
           </button>
         </div>
 
@@ -138,7 +156,7 @@ export default function SchemesPage() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-teal-600 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
-                    ⚛
+                    <Layers className="h-4 w-4" />
                   </div>
                   <div className="flex gap-1.5">
                     <span className="rounded-full bg-teal-500/10 px-2.5 py-0.5 text-[10px] font-bold text-teal-600 dark:text-teal-400">
@@ -170,6 +188,21 @@ export default function SchemesPage() {
                     </p>
                   </div>
                 </div>
+
+                <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAuctionBatch(b);
+                      setShowAuctionModal(true);
+                      setAuctionSuccess(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-teal-500/30 bg-teal-500/5 py-2 text-xs font-bold text-teal-700 hover:bg-teal-500/10 dark:text-teal-300 dark:hover:bg-teal-400/10 transition cursor-pointer"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Run Chit Auction & Dividend</span>
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -191,15 +224,16 @@ export default function SchemesPage() {
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white cursor-pointer"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {formError && (
-              <div className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-400">
-                ⚠️ {formError}
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{formError}</span>
               </div>
             )}
 
@@ -311,11 +345,14 @@ export default function SchemesPage() {
               </div>
 
               {/* Cadence Summary Helper Banner */}
-              <div className="rounded-xl border border-teal-500/20 bg-teal-500/5 p-3 text-xs leading-relaxed text-teal-800 dark:text-teal-300">
-                💡 <span className="font-semibold">Cadence Rule:</span> For this scheme, collections will be due once every{" "}
-                <span className="font-extrabold underline text-teal-700 dark:text-teal-200">
-                  {intervalDays} {frequency === "DAILY" ? (intervalDays === 1 ? "day" : "days") : frequency === "WEEKLY" ? (intervalDays === 1 ? "week" : "weeks") : (intervalDays === 1 ? "month" : "months")}
-                </span>.
+              <div className="flex items-center gap-2 rounded-xl border border-teal-500/20 bg-teal-500/5 p-3 text-xs leading-relaxed text-teal-800 dark:text-teal-300">
+                <Info className="h-4 w-4 shrink-0" />
+                <div>
+                  <span className="font-semibold">Cadence Rule:</span> For this scheme, collections will be due once every{" "}
+                  <span className="font-extrabold underline text-teal-700 dark:text-teal-200">
+                    {intervalDays} {frequency === "DAILY" ? (intervalDays === 1 ? "day" : "days") : frequency === "WEEKLY" ? (intervalDays === 1 ? "week" : "weeks") : (intervalDays === 1 ? "month" : "months")}
+                  </span>.
+                </div>
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-200/70 dark:border-[#202425]">
@@ -338,6 +375,172 @@ export default function SchemesPage() {
           </div>
         </div>
       )}
+
+      {/* ==================================================== */}
+      {/* CHIT FUND (PALAGARA SEETU) AUCTION & DIVIDEND MODAL */}
+      {/* ==================================================== */}
+      {showAuctionModal && selectedAuctionBatch && (() => {
+        const batchInst = Number(selectedAuctionBatch.installment_amount) || 5000;
+        const totalCycles = Number(selectedAuctionBatch.total_cycles) || 20;
+        const chitPool = batchInst * totalCycles;
+        const foremanFee = (chitPool * foremanPercent) / 100;
+        const netDividendPool = Math.max(0, bidDiscount - foremanFee);
+        const dividendPerMember = Math.floor(netDividendPool / totalCycles);
+        const netInstallmentToPay = Math.max(0, batchInst - dividendPerMember);
+        const winnerPrizePayout = chitPool - bidDiscount;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#202425] dark:bg-[#121518] space-y-5 animate-in fade-in zoom-in-95">
+              
+              <div className="flex items-start justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-bold text-slate-900 dark:text-white">
+                      Monthly Chit Auction & Dividend Engine
+                    </span>
+                    <span className="text-[10px] font-mono font-bold bg-teal-500/10 text-teal-600 px-2 py-0.5 rounded-full dark:text-teal-400">
+                      Cycle #14
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Batch: <strong className="text-slate-800 dark:text-slate-200">{selectedAuctionBatch.batch_name}</strong> • Pool Value: <strong className="font-mono text-teal-600 dark:text-teal-400">₹{chitPool.toLocaleString("en-IN")}</strong>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAuctionModal(false)}
+                  className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {auctionSuccess ? (
+                <div className="p-6 text-center space-y-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
+                  <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                    Chit Auction Closed & Dividend Applied
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    Winning Bid recorded for <strong>{winnerName}</strong> with net payout of <strong>₹{winnerPrizePayout.toLocaleString("en-IN")}</strong>.<br />
+                    All {totalCycles} members credited with <strong>₹{dividendPerMember.toLocaleString("en-IN")} dividend discount</strong>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowAuctionModal(false)}
+                    className="mt-2 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-500"
+                  >
+                    Done & Return
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4 text-xs">
+                  
+                  {/* Winner and Bid Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Auction Winning Member
+                      </label>
+                      <input
+                        type="text"
+                        value={winnerName}
+                        onChange={(e) => setWinnerName(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Winning Bid Discount Amount (₹)
+                      </label>
+                      <input
+                        type="number"
+                        step={500}
+                        value={bidDiscount}
+                        onChange={(e) => setBidDiscount(Math.max(0, Number(e.target.value)))}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono font-bold text-teal-600 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-slate-900 dark:text-teal-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Foreman Commission Slider */}
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
+                    <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-300">
+                      <span>Foreman Organizer Commission</span>
+                      <span className="font-mono text-teal-600 dark:text-teal-400">{foremanPercent}% (₹{foremanFee.toLocaleString("en-IN")})</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      value={foremanPercent}
+                      onChange={(e) => setForemanPercent(Number(e.target.value))}
+                      className="w-full accent-teal-500 cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[10px] text-slate-400">
+                      <span>0% (No commission)</span>
+                      <span>5% (Statutory Standard)</span>
+                      <span>10% (Maximum Cap)</span>
+                    </div>
+                  </div>
+
+                  {/* Mathematical Waterfall Breakdown */}
+                  <div className="rounded-2xl border border-teal-500/20 bg-teal-500/5 p-4 space-y-2.5 font-mono">
+                    <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                      <span>Gross Chit Value:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">₹{chitPool.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between text-rose-600 dark:text-rose-400">
+                      <span>- Auction Bid Discount:</span>
+                      <span>-₹{bidDiscount.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-200 pt-1.5 dark:border-slate-800 font-bold text-emerald-600 dark:text-emerald-400">
+                      <span>Winner Payout (Prize Money):</span>
+                      <span className="text-sm">₹{winnerPrizePayout.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-200 pt-1.5 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                      <span>Total Dividend Pool:</span>
+                      <span>₹{netDividendPool.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between text-cyan-600 dark:text-cyan-400 font-bold">
+                      <span>Dividend per Member ({totalCycles} members):</span>
+                      <span>-₹{dividendPerMember.toLocaleString("en-IN")} Discount</span>
+                    </div>
+                    <div className="flex justify-between border-t border-dashed border-teal-500/40 pt-2 text-xs font-bold text-slate-900 dark:text-white">
+                      <span>Next Month Due to Pay per Member:</span>
+                      <span className="text-sm font-extrabold text-teal-600 dark:text-teal-400">
+                        ₹{netInstallmentToPay.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 line-through">₹{batchInst.toLocaleString("en-IN")}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAuctionModal(false)}
+                      className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuctionSuccess(true)}
+                      className="rounded-xl bg-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-teal-500"
+                    >
+                      Confirm Auction & Apply Member Dividends
+                    </button>
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

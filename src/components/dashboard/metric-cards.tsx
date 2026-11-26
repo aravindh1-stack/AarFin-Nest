@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SkeletonBlock } from "@/components/skeleton-block";
+import { Layers, Users, Receipt, MapPin, TrendingUp, Minus } from "lucide-react";
 
 function Sparkline({ points }: { points: number[] }) {
   const max = Math.max(...points);
@@ -80,75 +81,78 @@ export function MetricCards() {
     {
       label: "Active Schemes & Batches",
       value: String(batchesCount),
-      delta: "Live DB Sync",
+      delta: "Live Ledger Sync",
       trend: "up" as const,
-      icon: "⚛",
+      icon: Layers,
       sparkline: [4, 6, 5, 8, 7, 10, 9, 12],
     },
     {
-      label: "Registered Customers",
+      label: "Registered Members",
       value: String(customersCount),
-      delta: "Active Members",
+      delta: "Active Portfolio",
       trend: "up" as const,
-      icon: "👥",
+      icon: Users,
       sparkline: [3, 5, 4, 6, 8, 7, 9, 11],
     },
     {
-      label: "Total Collections",
+      label: "Total Realized Collections",
       value: totalCollections,
       delta: "Atomic FIFO Ledger",
       trend: "up" as const,
-      icon: "◈",
+      icon: Receipt,
       sparkline: [8, 8, 9, 9, 8, 10, 9, 10],
     },
     {
-      label: "Route Groups",
+      label: "Operating Route Beats",
       value: String(groupsCount),
-      delta: "Geographical Isolation",
+      delta: "Regional Allocation",
       trend: "flat" as const,
-      icon: "◎",
+      icon: MapPin,
       sparkline: [2, 2, 3, 3, 3, 4, 4, 4],
     },
   ];
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {metrics.map((metric) => (
-        <div
-          key={metric.label}
-          className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 hover:shadow-lg hover:shadow-teal-500/5 dark:border-[#202425] dark:bg-[#151718]/70 dark:hover:border-teal-500/30"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-base text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
-              {metric.icon}
-            </div>
-            <div className="text-teal-500/70 dark:text-teal-400/60">
-              <Sparkline points={metric.sparkline} />
-            </div>
-          </div>
-
-          <p className="mt-4 text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            {metric.label}
-          </p>
-          <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-            {metric.value}
-          </p>
-          <p
-            className={`mt-1.5 inline-flex items-center gap-1 text-xs font-semibold ${
-              metric.trend === "up"
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-slate-500 dark:text-slate-400"
-            }`}
+      {metrics.map((metric) => {
+        const IconComp = metric.icon;
+        return (
+          <div
+            key={metric.label}
+            className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 hover:shadow-lg hover:shadow-teal-500/5 dark:border-[#202425] dark:bg-[#151718]/70 dark:hover:border-teal-500/30"
           >
-            {metric.trend === "up" && (
-              <svg viewBox="0 0 12 12" fill="currentColor" className="h-3 w-3">
-                <path d="M6 2 10 8H2Z" />
-              </svg>
-            )}
-            {metric.delta}
-          </p>
-        </div>
-      ))}
+            <div className="flex items-start justify-between">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
+                <IconComp className="h-4 w-4" />
+              </div>
+              <div className="text-teal-500/70 dark:text-teal-400/60">
+                <Sparkline points={metric.sparkline} />
+              </div>
+            </div>
+
+            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              {metric.label}
+            </p>
+            <p className="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white">
+              {metric.value}
+            </p>
+            <p
+              className={`mt-1.5 inline-flex items-center gap-1 text-xs font-semibold ${
+                metric.trend === "up"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              {metric.trend === "up" ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <Minus className="h-3 w-3" />
+              )}
+              <span>{metric.delta}</span>
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }

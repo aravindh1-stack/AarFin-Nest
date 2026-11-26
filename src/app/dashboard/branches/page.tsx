@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { SkeletonBlock } from "@/components/skeleton-block";
+import { Building2 } from "lucide-react";
 
 interface BranchItem {
   id: string;
@@ -99,7 +100,7 @@ export default function BranchesPage() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-teal-600 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
-                    ⌘
+                    <Building2 className="h-4 w-4" />
                   </div>
                   <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                     {b.status}

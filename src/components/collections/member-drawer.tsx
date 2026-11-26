@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { StatusPill } from "@/components/status-pill";
 import type { Member } from "@/lib/mock-members";
 import { BrandLogo } from "@/components/brand-logo";
-import { type ReceiptData } from "@/components/collections/receipt-modal";
+import { type ReceiptData, generateWhatsAppUrl } from "@/components/collections/receipt-modal";
 
 function formatCurrency(value: number) {
   return `₹${value.toLocaleString("en-IN")}`;
@@ -29,21 +29,27 @@ export function MemberDrawer({
   totalCount?: number;
   onReceiptGenerated?: (receipt: ReceiptData) => void;
 }) {
+  const [activeTab, setActiveTab] = useState<"pay" | "schedule" | "receipts" | "profile">("schedule");
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   const open = member !== null;
+
+  // Derive default cycle amount
+  const cycleAmount = useMemo(() => {
+    return (member as any)?.installmentAmount || member?.installments?.[0]?.amount || 500;
+  }, [member]);
+
   const firstOpenInstallment = member?.installments.find(
     (i) => i.status === "PENDING" || i.status === "PARTIAL",
   );
 
-  const handleApplyPayment = async () => {
-    if (!member || !amount) return;
+  const handleApplyPayment = async (overrideAmount?: number) => {
+    const payAmt = overrideAmount !== undefined ? overrideAmount : Number(amount);
+    if (!member || !payAmt || payAmt <= 0) return;
     setSubmitting(true);
     setFeedbackMsg(null);
-
-    const paidVal = Number(amount);
 
     try {
       const receiptNo = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -53,7 +59,7 @@ export function MemberDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_id: (member as any).dbId || member.id,
-          amount_paid: paidVal,
+          amount_paid: payAmt,
           payment_method: "CASH",
           receipt_no: receiptNo,
           notes: "Field Collection Payment Entry",
@@ -62,16 +68,17 @@ export function MemberDrawer({
       });
 
       if (res.ok) {
-        setFeedbackMsg(`✓ Payment of ₹${paidVal.toLocaleString("en-IN")} recorded!`);
+        setFeedbackMsg(`✓ ₹${payAmt.toLocaleString("en-IN")} recorded successfully!`);
         setAmount("");
         if (onPaymentRecorded) {
           onPaymentRecorded();
         }
 
-        const remaining = Math.max(0, (member.totalPendingDues || 0) - paidVal);
-        const advance = paidVal > (member.totalPendingDues || 0) 
-          ? paidVal - (member.totalPendingDues || 0) 
-          : (member.advanceBalance || 0);
+        const remaining = Math.max(0, (member.totalPendingDues || 0) - payAmt);
+        const advance =
+          payAmt > (member.totalPendingDues || 0)
+            ? payAmt - (member.totalPendingDues || 0)
+            : member.advanceBalance || 0;
 
         if (onReceiptGenerated) {
           onReceiptGenerated({
@@ -79,7 +86,7 @@ export function MemberDrawer({
             customerName: member.name,
             customerCode: (member as any).customerCode || member.id,
             phone: (member as any).phone || "",
-            amount: paidVal,
+            amount: payAmt,
             scheme: member.scheme,
             route: member.route,
             remainingDues: remaining,
@@ -92,7 +99,7 @@ export function MemberDrawer({
           });
         }
 
-        setTimeout(() => setFeedbackMsg(null), 4000);
+        setTimeout(() => setFeedbackMsg(null), 3500);
       } else {
         const err = await res.json().catch(() => ({}));
         setFeedbackMsg(`⚠️ Error: ${err.error || "Failed to record payment"}`);
@@ -106,10 +113,11 @@ export function MemberDrawer({
 
   return (
     <>
+      {/* Backdrop without GPU-heavy blur for 60fps mobile scrolling */}
       <div
         onClick={onClose}
         aria-hidden="true"
-        className={`fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-slate-950/60 transition-opacity duration-200 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
@@ -118,297 +126,362 @@ export function MemberDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Member details"
-        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-md transform flex-col border-l border-slate-200/80 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-[#202425] dark:bg-[#0C0D0E] ${
+        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-md transform flex-col bg-white shadow-2xl transition-transform duration-200 ease-out border-l border-slate-200 dark:border-[#202425] dark:bg-[#0C0D0E] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {member && (
           <>
-            {/* Mobile drag handle indicator */}
-            <div className="pt-2.5 pb-0 flex justify-center sm:hidden">
-              <div className="h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700" />
-            </div>
-
-            <div className="flex items-start justify-between border-b border-slate-200/70 px-4 py-4 sm:px-6 sm:py-5 dark:border-[#202425]">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-sm font-bold text-white shadow-sm">
+            {/* 1. COMPACT CORPORATE HEADER */}
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-[#202425] dark:bg-[#151718]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-700 text-xs font-bold text-white shadow-sm dark:bg-teal-600">
                   {member.initials}
                 </div>
                 <div className="min-w-0">
-                  <h2 className="truncate text-base font-bold text-slate-900 dark:text-white">
+                  <h2 className="truncate text-sm font-bold text-slate-900 dark:text-white leading-tight">
                     {member.name}
                   </h2>
-                  <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                    ID: {(member as any).customerCode || member.id}
+                  <p className="text-[11px] font-mono text-slate-500 truncate">
+                    {(member as any).customerCode || member.id} • {member.scheme}
                   </p>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
-                    <span className="font-bold uppercase text-teal-600 dark:text-teal-400">
-                      {(member as any).frequencyType || "WEEKLY"}
-                    </span>
-                    <span className="text-slate-300 dark:text-slate-700">•</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
-                      Cycle: {formatCurrency((member as any).installmentAmount || member.installments?.[0]?.amount || 200)}
-                    </span>
-                  </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close panel"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-slate-50 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:border-[#202425] dark:bg-white/5 dark:hover:text-white cursor-pointer"
-              >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94Z" />
-                </svg>
-              </button>
-            </div>
 
-            {/* Sequential Route Navigation Bar */}
-            {typeof currentIndex === "number" && typeof totalCount === "number" && totalCount > 1 && (
-              <div className="flex items-center justify-between border-b border-slate-200/70 bg-slate-50/80 px-4 py-2 text-xs dark:border-[#202425] dark:bg-white/[0.02]">
+              {/* Prev / Next & Close */}
+              <div className="flex items-center gap-1 shrink-0">
+                {typeof currentIndex === "number" && typeof totalCount === "number" && totalCount > 1 && (
+                  <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white dark:border-[#202425] dark:bg-[#0C0D0E] mr-1">
+                    <button
+                      type="button"
+                      disabled={!onNavigatePrev}
+                      onClick={onNavigatePrev}
+                      title="Previous Member"
+                      className="h-8 w-8 flex items-center justify-center text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
+                    >
+                      ‹
+                    </button>
+                    <span className="text-[10px] font-bold px-1.5 text-slate-400">
+                      {currentIndex + 1}/{totalCount}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={!onNavigateNext}
+                      onClick={onNavigateNext}
+                      title="Next Member"
+                      className="h-8 w-8 flex items-center justify-center text-xs font-bold text-teal-700 hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed dark:text-teal-400 dark:hover:bg-white/5 cursor-pointer"
+                    >
+                      ›
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  disabled={!onNavigatePrev}
-                  onClick={onNavigatePrev}
-                  className="flex items-center gap-1 min-h-[36px] px-2.5 py-1 rounded-lg font-bold text-slate-700 transition hover:bg-slate-200/70 disabled:opacity-30 disabled:cursor-not-allowed dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer"
+                  onClick={onClose}
+                  aria-label="Close panel"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:border-[#202425] dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white cursor-pointer"
                 >
-                  <span>← Prev</span>
-                </button>
-                <span className="font-medium text-slate-500 dark:text-slate-400 text-[11px]">
-                  Member <span className="font-bold text-slate-900 dark:text-white">{currentIndex + 1}</span> of {totalCount}
-                </span>
-                <button
-                  type="button"
-                  disabled={!onNavigateNext}
-                  onClick={onNavigateNext}
-                  className="flex items-center gap-1 min-h-[36px] px-2.5 py-1 rounded-lg font-bold text-teal-700 transition hover:bg-teal-500/15 disabled:opacity-30 disabled:cursor-not-allowed dark:text-teal-400 dark:hover:bg-white/10 cursor-pointer"
-                >
-                  <span>Next →</span>
+                  ✕
                 </button>
               </div>
-            )}
+            </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 pb-32 sm:pb-8">
+            {/* 2. PINNED ABOVE-THE-FOLD HERO PAYMENT CARD (ZERO SCROLL NEEDED TO COLLECT) */}
+            <div className="border-b border-slate-200 bg-white p-4 shadow-sm dark:border-[#202425] dark:bg-[#121314]">
               {feedbackMsg && (
-                <div className="mb-4 rounded-xl border border-teal-500/30 bg-teal-500/10 p-3 text-xs font-semibold text-teal-300">
+                <div className="mb-2.5 rounded-xl border border-teal-500/30 bg-teal-500/10 p-2.5 text-xs font-bold text-teal-700 dark:text-teal-300 text-center">
                   {feedbackMsg}
                 </div>
               )}
 
-              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-600 dark:text-slate-400">
-                <span className="rounded-full border border-teal-500/20 bg-teal-500/10 px-2.5 py-1 font-semibold text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
-                  {member.scheme}
-                </span>
-                <span className="font-medium text-slate-700 dark:text-slate-300">{member.route}</span>
-                {member.phone && <span className="font-mono text-slate-600 dark:text-slate-400">📞 {member.phone}</span>}
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-3.5 sm:p-4 dark:border-[#202425] dark:bg-white/[0.02]">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                    Total Pending Dues
-                  </p>
-                  <p className="mt-1 text-lg sm:text-xl font-extrabold text-rose-600 dark:text-rose-400">
-                    {formatCurrency(member.totalPendingDues)}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-slate-200/70 bg-slate-50/80 p-3.5 sm:p-4 dark:border-[#202425] dark:bg-white/[0.02]">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                    Advance Balance
-                  </p>
-                  <p className="mt-1 text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(member.advanceBalance)}
-                  </p>
-                </div>
-              </div>
-
-              {member.advanceBalance > 0 && (
-                <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5">
-                  <svg
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a1 1 0 0 0 0 2v3a1 1 0 0 0 1 1h1a1 1 0 1 0 0-2v-3a1 1 0 0 0-1-1Z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <p className="text-xs leading-relaxed text-emerald-800 dark:text-emerald-300">
-                    Member is carrying an advance credit of{" "}
-                    <span className="font-bold">
-                      {formatCurrency(member.advanceBalance)}
-                    </span>
-                    . It will auto-apply to the next cycle.
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#202425] dark:bg-[#151718]">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Record Collection Payment
-                </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  {firstOpenInstallment
-                    ? `Applies to cycle #${firstOpenInstallment.cycle} (oldest open installment first).`
-                    : "No open dues — payment will be held as advance credit."}
-                </p>
-
-                <div className="mt-3 flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
-                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="Enter amount"
-                      className="w-full min-h-[44px] rounded-xl border border-slate-200 bg-white py-2.5 pl-8 pr-3 text-base sm:text-sm font-bold text-slate-900 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
-                    />
+              {/* Dues & Balance Bar */}
+              <div className="flex items-center justify-between pb-3">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Account Status
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {member.totalPendingDues > 0 ? (
+                      <span className="font-mono text-xl font-black text-rose-600 dark:text-rose-400">
+                        {formatCurrency(member.totalPendingDues)} Due
+                      </span>
+                    ) : member.advanceBalance > 0 ? (
+                      <span className="font-mono text-xl font-black text-emerald-600 dark:text-emerald-400">
+                        +{formatCurrency(member.advanceBalance)} Adv
+                      </span>
+                    ) : (
+                      <span className="font-mono text-xl font-black text-slate-700 dark:text-slate-300">
+                        ₹0 (Cleared)
+                      </span>
+                    )}
                   </div>
+                </div>
+
+                <div className="text-right text-xs">
+                  <span className="text-[10px] font-semibold text-slate-400 block">Cycle Amount</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 font-mono">
+                    {formatCurrency(cycleAmount)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Direct Quick Payment Input & Apply Action */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder={String(cycleAmount)}
+                    className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-7 pr-3 text-base sm:text-sm font-bold text-slate-900 outline-none ring-teal-500/30 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleApplyPayment()}
+                  disabled={submitting || (!amount && member.totalPendingDues <= 0)}
+                  className="h-11 px-5 rounded-xl bg-teal-700 text-xs font-bold text-white shadow-md hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer flex items-center justify-center shrink-0"
+                >
+                  {submitting ? "Saving..." : "Record Payment"}
+                </button>
+              </div>
+
+              {/* 1-Tap Preset Chips */}
+              <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                {member.totalPendingDues > 0 && (
                   <button
                     type="button"
-                    onClick={handleApplyPayment}
-                    disabled={!amount || submitting}
-                    className="min-h-[44px] shrink-0 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-700/25 transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer flex items-center justify-center"
+                    onClick={() => handleApplyPayment(member.totalPendingDues)}
+                    disabled={submitting}
+                    className="h-8 shrink-0 rounded-lg bg-rose-50 border border-rose-200 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:border-rose-800/40 dark:text-rose-300 cursor-pointer"
                   >
-                    {submitting ? "Posting..." : "Apply Payment"}
+                    Clear Full Dues ({formatCurrency(member.totalPendingDues)})
                   </button>
-                </div>
+                )}
 
-                <div className="mt-3.5 space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Quick Amount Presets:
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {member.installments?.[0]?.amount && (
-                      <button
-                        type="button"
-                        onClick={() => setAmount(String(member.installments[0].amount))}
-                        className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-teal-500/40 bg-teal-500/10 text-xs font-bold text-teal-700 hover:bg-teal-500/20 dark:text-teal-300 cursor-pointer flex items-center"
-                      >
-                        1 Cycle ({formatCurrency(member.installments[0].amount)})
-                      </button>
-                    )}
+                <button
+                  type="button"
+                  onClick={() => setAmount(String(cycleAmount))}
+                  className="h-8 shrink-0 rounded-lg border border-teal-500/30 bg-teal-500/10 px-2.5 text-xs font-bold text-teal-700 hover:bg-teal-500/20 dark:text-teal-300 cursor-pointer"
+                >
+                  1 Cycle ({formatCurrency(cycleAmount)})
+                </button>
 
-                    {member.totalPendingDues > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setAmount(String(member.totalPendingDues))}
-                        className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-xs font-bold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 cursor-pointer flex items-center"
-                      >
-                        Clear Dues ({formatCurrency(member.totalPendingDues)})
-                      </button>
-                    )}
-
-                    {[200, 500, 1000, 2000, 5000].map((quick) => (
-                      <button
-                        key={quick}
-                        type="button"
-                        onClick={() => setAmount(String(quick))}
-                        className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:border-teal-500/50 hover:bg-white dark:border-[#202425] dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer flex items-center"
-                      >
-                        {formatCurrency(quick)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {[500, 1000, 2000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(String(preset))}
+                    className="h-8 shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 hover:border-slate-300 dark:border-[#202425] dark:bg-white/5 dark:text-slate-300 cursor-pointer"
+                  >
+                    {formatCurrency(preset)}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="mt-6">
-                <h3 className="mb-3 text-sm font-bold text-slate-900 dark:text-white">
-                  Installment Cycles Breakdown
-                </h3>
-                <div className="max-h-80 overflow-y-auto rounded-xl border border-slate-200/80 dark:border-[#202425] shadow-inner">
+            {/* 3. CORPORATE SEGMENTED TABS (SAVES 80% SCROLLING) */}
+            <div className="flex border-b border-slate-200 bg-slate-50 px-4 dark:border-[#202425] dark:bg-[#151718]/60">
+              <button
+                type="button"
+                onClick={() => setActiveTab("schedule")}
+                className={`py-2.5 px-3 text-xs font-bold border-b-2 transition cursor-pointer ${
+                  activeTab === "schedule"
+                    ? "border-teal-700 text-teal-700 dark:border-teal-400 dark:text-teal-300"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                }`}
+              >
+                Schedule ({member.installments?.length || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("receipts")}
+                className={`py-2.5 px-3 text-xs font-bold border-b-2 transition cursor-pointer ${
+                  activeTab === "receipts"
+                    ? "border-teal-700 text-teal-700 dark:border-teal-400 dark:text-teal-300"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                }`}
+              >
+                Receipts ({(member as any).rawPayments?.length || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("profile")}
+                className={`py-2.5 px-3 text-xs font-bold border-b-2 transition cursor-pointer ${
+                  activeTab === "profile"
+                    ? "border-teal-700 text-teal-700 dark:border-teal-400 dark:text-teal-300"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                }`}
+              >
+                Member Info
+              </button>
+            </div>
+
+            {/* 4. TAB CONTENT AREA */}
+            <div className="flex-1 overflow-y-auto p-4 pb-28">
+              {/* TAB 1: SCHEDULE */}
+              {activeTab === "schedule" && (
+                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm dark:border-[#202425] dark:bg-[#151718]">
                   <table className="min-w-full text-left text-xs">
-                    <thead className="bg-slate-50/80 text-slate-500 dark:bg-white/[0.02] dark:text-slate-400 sticky top-0 backdrop-blur">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 dark:bg-white/[0.02] dark:border-[#202425] dark:text-slate-400">
                       <tr>
-                        <th className="px-3 py-2.5 font-semibold">Cycle</th>
-                        <th className="px-3 py-2.5 font-semibold">Due</th>
-                        <th className="px-3 py-2.5 font-semibold">Amount</th>
-                        <th className="px-3 py-2.5 font-semibold">Status</th>
+                        <th className="px-3 py-2 font-semibold">Cycle</th>
+                        <th className="px-3 py-2 font-semibold">Due Date</th>
+                        <th className="px-3 py-2 font-semibold">Amount</th>
+                        <th className="px-3 py-2 text-right font-semibold">Status</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {member.installments.map((installment) => (
-                        <tr
-                          key={installment.cycle}
-                          className="border-t border-slate-200/70 dark:border-[#202425]"
-                        >
-                          <td className="px-3 py-2.5 font-medium text-slate-800 dark:text-slate-200">
-                            #{installment.cycle}
+                    <tbody className="divide-y divide-slate-100 dark:divide-[#202425]">
+                      {member.installments.map((inst) => (
+                        <tr key={inst.cycle} className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02]">
+                          <td className="px-3 py-2.5 font-bold text-slate-800 dark:text-slate-200">
+                            #{inst.cycle}
                           </td>
                           <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                            {installment.dueDate}
+                            {inst.dueDate}
                           </td>
-                          <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                            {installment.status === "PARTIAL"
-                              ? `${formatCurrency(installment.paidAmount)} / ${formatCurrency(installment.amount)}`
-                              : formatCurrency(installment.amount)}
+                          <td className="px-3 py-2.5 font-mono text-slate-800 dark:text-slate-200">
+                            {inst.status === "PARTIAL"
+                              ? `${formatCurrency(inst.paidAmount)} / ${formatCurrency(inst.amount)}`
+                              : formatCurrency(inst.amount)}
                           </td>
-                          <td className="px-3 py-2.5">
-                            <StatusPill status={installment.status} />
+                          <td className="px-3 py-2.5 text-right">
+                            <StatusPill status={inst.status} />
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              )}
 
-              {/* DB Recorded Receipts Log */}
-              {Array.isArray((member as any).rawPayments) && (member as any).rawPayments.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="mb-3 text-sm font-bold text-slate-900 dark:text-white">
-                    Verified Database Receipts ({(member as any).rawPayments.length})
-                  </h3>
-                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                    {(member as any).rawPayments.map((pay: any) => (
-                      <div
-                        key={pay.id || Math.random()}
-                        className="flex items-center justify-between rounded-xl border border-slate-200/70 bg-slate-50/50 p-3 text-xs dark:border-[#202425] dark:bg-white/[0.02]"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <BrandLogo className="h-7 w-auto object-contain shrink-0" />
+              {/* TAB 2: RECEIPTS */}
+              {activeTab === "receipts" && (
+                <div className="space-y-2.5">
+                  {Array.isArray((member as any).rawPayments) && (member as any).rawPayments.length > 0 ? (
+                    (member as any).rawPayments.map((pay: any, idx: number) => {
+                      const payAmt = Number(pay.amount_paid || pay.amount || 0);
+                      const recNo = pay.receipt_no || pay.receipt_number || `REC-${idx + 1}`;
+                      const recDate = pay.payment_date?.split("T")[0] || "Today";
+
+                      const receiptUrl = generateWhatsAppUrl({
+                        receiptNo: recNo,
+                        customerName: member.name,
+                        customerCode: (member as any).customerCode || member.id,
+                        phone: (member as any).phone || "",
+                        amount: payAmt,
+                        scheme: member.scheme,
+                        route: member.route,
+                        remainingDues: member.totalPendingDues,
+                        advanceBalance: member.advanceBalance,
+                        date: recDate,
+                      });
+
+                      return (
+                        <div
+                          key={pay.id || idx}
+                          className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-xs shadow-sm dark:border-[#202425] dark:bg-[#151718]"
+                        >
                           <div className="min-w-0">
-                            <p className="font-mono font-bold text-teal-600 dark:text-teal-400 truncate">
-                              {pay.receipt_no || pay.receipt_number || "REC-CONFIRMED"}
+                            <p className="font-mono font-bold text-teal-700 dark:text-teal-400 truncate">
+                              {recNo}
                             </p>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                              {pay.notes || pay.payment_method || "Field Collection"}
-                            </p>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                              {pay.payment_date?.split("T")[0] || "Today"} · {pay.payment_method || "CASH"}
+                            <p className="text-[11px] text-slate-500">
+                              {recDate} • {pay.payment_method || "CASH"}
                             </p>
                           </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                              {formatCurrency(payAmt)}
+                            </span>
+                            <a
+                              href={receiptUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-8 px-2.5 flex items-center justify-center rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800/40 dark:text-emerald-300"
+                            >
+                              Share
+                            </a>
+                          </div>
                         </div>
-                        <span className="shrink-0 font-mono text-sm font-bold text-slate-900 dark:text-white">
-                          {formatCurrency(Number(pay.amount_paid || pay.amount || 0))}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-xs text-slate-500 dark:border-[#202425] dark:bg-[#151718]">
+                      No receipts logged for this member yet.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: MEMBER PROFILE */}
+              {activeTab === "profile" && (
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3 text-xs dark:border-[#202425] dark:bg-[#151718]">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-[#202425]">
+                    <span className="text-slate-500">Phone Number:</span>
+                    {(member as any).phone ? (
+                      <a
+                        href={`tel:${(member as any).phone}`}
+                        className="flex items-center gap-1.5 font-bold text-teal-700 hover:underline dark:text-teal-400"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        <span>{(member as any).phone}</span>
+                      </a>
+                    ) : (
+                      <span className="text-slate-400">Not recorded</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-[#202425]">
+                    <span className="text-slate-500">Assigned Route:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {member.route}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-[#202425]">
+                    <span className="text-slate-500">Scheme:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {member.scheme}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-[#202425]">
+                    <span className="text-slate-500">Frequency:</span>
+                    <span className="font-bold text-teal-700 dark:text-teal-400">
+                      {(member as any).frequencyType || "WEEKLY"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-[#202425]">
+                    <span className="text-slate-500">Joining Date:</span>
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {member.memberSince || "Aug 2026"}
+                    </span>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="border-t border-slate-200/70 p-4 sm:px-6 dark:border-[#202425] bg-white/90 dark:bg-[#0C0D0E]/90 backdrop-blur pb-safe flex gap-2.5">
+            {/* 5. SLIM CORPORATE BOTTOM ACTION BAR */}
+            <div className="border-t border-slate-200 p-3 bg-white dark:border-[#202425] dark:bg-[#121314] flex gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 cursor-pointer"
+                className="flex-1 h-11 flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-white/5 dark:text-slate-200 cursor-pointer"
               >
-                Close Drawer
+                Close
               </button>
               {onNavigateNext && (
                 <button
                   type="button"
                   onClick={onNavigateNext}
-                  className="flex-1 min-h-[44px] flex items-center justify-center gap-1 rounded-xl bg-teal-700 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
+                  className="flex-1 h-11 flex items-center justify-center gap-1 rounded-xl bg-slate-900 text-xs font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 cursor-pointer"
                 >
                   <span>Next Member</span>
                   <span>→</span>

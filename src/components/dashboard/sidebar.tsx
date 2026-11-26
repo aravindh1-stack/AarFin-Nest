@@ -72,10 +72,10 @@ export function DashboardSidebar() {
           <BrandLogo className="h-8 w-auto object-contain" />
           <div className="flex flex-col">
             <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-none">
-              NexFix
+              AarFin Nest
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400 mt-1">
-              AarFin Nest
+              Financial OS
             </span>
           </div>
         </Link>

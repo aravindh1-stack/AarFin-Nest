@@ -120,11 +120,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             >
               <BrandLogo className="h-8 w-auto object-contain" />
               <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                  NexFix
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-none">
                   AarFin Nest
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400 mt-1">
+                  Financial OS
                 </span>
               </div>
             </Link>
@@ -221,7 +221,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Mobile Bottom Navigation Bar (Thumb Friendly with Safe Area support) */}
         <nav
           aria-label="Mobile Bottom Navigation"
-          className="fixed bottom-0 left-0 right-0 z-40 flex h-16 pb-[env(safe-area-inset-bottom,0px)] items-center justify-around border-t border-slate-200/80 bg-white/95 px-2 backdrop-blur-xl lg:hidden dark:border-[#202425] dark:bg-[#0C0D0E]/95"
+          className="fixed bottom-0 left-0 right-0 z-40 flex h-16 pb-[env(safe-area-inset-bottom,0px)] items-center justify-around border-t border-slate-200/80 bg-white/95 px-2 dark:border-[#202425] dark:bg-[#0C0D0E]/95 lg:hidden"
         >
           {mainNavTabs.map((tab) => {
             const active = pathname === tab.href;

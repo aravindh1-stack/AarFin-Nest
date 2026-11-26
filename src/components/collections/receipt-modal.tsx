@@ -150,18 +150,26 @@ export function ReceiptModal({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-500 cursor-pointer"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-500 cursor-pointer"
           >
-            <span>📱 Send WhatsApp Receipt</span>
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+              <path d="M12.031 2c-5.508 0-9.985 4.477-9.985 9.985 0 1.761.459 3.477 1.332 4.992L2 22l5.168-1.355a9.96 9.96 0 0 0 4.863 1.258h.004c5.507 0 9.984-4.477 9.984-9.985 0-2.668-1.04-5.176-2.926-7.062A9.925 9.925 0 0 0 12.031 2zm0 18.258h-.003a8.27 8.27 0 0 1-4.223-1.152l-.303-.18-3.137.823.837-3.059-.197-.313a8.27 8.27 0 0 1-1.267-4.407c0-4.57 3.719-8.289 8.293-8.289a8.24 8.24 0 0 1 5.867 2.43 8.244 8.244 0 0 1 2.427 5.864c0 4.57-3.719 8.283-8.294 8.283zm4.547-6.207c-.249-.125-1.477-.729-1.705-.812-.229-.084-.395-.125-.561.125s-.644.812-.789.979c-.146.166-.291.187-.541.062-.249-.125-1.054-.389-2.008-1.24-.742-.662-1.243-1.48-1.389-1.73-.146-.249-.015-.384.109-.508.112-.112.249-.291.374-.437.125-.146.166-.249.249-.416.084-.166.042-.312-.021-.437-.062-.125-.561-1.353-.77-1.853-.203-.487-.409-.42-.561-.428-.146-.007-.312-.009-.479-.009s-.437.062-.665.312c-.229.249-.874.854-.874 2.083 0 1.229.895 2.416 1.02 2.583.125.166 1.761 2.689 4.266 3.771.596.257 1.061.411 1.424.526.598.19 1.143.163 1.574.099.48-.072 1.477-.604 1.685-1.187.208-.583.208-1.083.146-1.187-.063-.105-.229-.167-.478-.292z"/>
+            </svg>
+            <span>Send WhatsApp Receipt</span>
           </a>
 
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handlePrint}
-              className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
+              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
             >
-              🖨 Print / PDF
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              <span>Print / PDF</span>
             </button>
 
             {hasNext && onNext ? (

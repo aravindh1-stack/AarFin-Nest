@@ -1,42 +1,47 @@
 import React from "react";
+import Image from "next/image";
 
-export interface BrandLogoProps
-  extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> {
+export interface BrandLogoProps {
   className?: string;
   alt?: string;
   variant?: "auto" | "light" | "dark";
+  priority?: boolean;
 }
 
 /**
- * BrandLogo renders the NexFix brand logo.
+ * BrandLogo renders the AarFin Nest brand logo.
  * - In light theme (or when variant="light"): uses `/nexfix.png`
  * - In dark theme (or when variant="dark"): uses `/nexfix-white.png`
  * - In "auto" mode: toggles seamlessly via CSS without hydration flash.
  */
 export function BrandLogo({
   className = "h-8 w-auto object-contain",
-  alt = "NexFix Logo",
+  alt = "AarFin Nest Logo",
   variant = "auto",
-  ...props
+  priority = false,
 }: BrandLogoProps) {
   if (variant === "dark") {
     return (
-      <img
+      <Image
         src="/nexfix-white.png"
         alt={alt}
+        width={120}
+        height={32}
+        priority={priority}
         className={className}
-        {...props}
       />
     );
   }
 
   if (variant === "light") {
     return (
-      <img
+      <Image
         src="/nexfix.png"
         alt={alt}
+        width={120}
+        height={32}
+        priority={priority}
         className={className}
-        {...props}
       />
     );
   }
@@ -44,18 +49,22 @@ export function BrandLogo({
   return (
     <>
       {/* Light theme logo */}
-      <img
+      <Image
         src="/nexfix.png"
         alt={alt}
+        width={120}
+        height={32}
+        priority={priority}
         className={`block dark:hidden ${className}`}
-        {...props}
       />
       {/* Dark theme logo */}
-      <img
+      <Image
         src="/nexfix-white.png"
         alt={alt}
+        width={120}
+        height={32}
+        priority={priority}
         className={`hidden dark:block ${className}`}
-        {...props}
       />
     </>
   );

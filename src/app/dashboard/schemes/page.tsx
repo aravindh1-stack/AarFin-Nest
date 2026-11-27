@@ -202,7 +202,22 @@ export default function SchemesPage() {
             batches.map((b) => {
               const typeInfo = getSchemeTypeBadge(b.frequency_type);
               const totalCycles = Number(b.total_cycles) || 20;
-              const currentCycle = Math.min(12, totalCycles);
+
+              // Calculate cycle progression based on start_date
+              let currentCycle = 1;
+              if (b.start_date) {
+                const sDate = new Date(b.start_date).getTime();
+                const now = new Date().getTime();
+                const diffDays = Math.max(0, Math.floor((now - sDate) / (1000 * 60 * 60 * 24)));
+                if (b.frequency_type === "DAILY") {
+                  currentCycle = Math.min(totalCycles, Math.max(1, diffDays + 1));
+                } else if (b.frequency_type === "WEEKLY") {
+                  currentCycle = Math.min(totalCycles, Math.max(1, Math.floor(diffDays / 7) + 1));
+                } else {
+                  currentCycle = Math.min(totalCycles, Math.max(1, Math.floor(diffDays / 30) + 1));
+                }
+              }
+
               const progressPct = Math.round((currentCycle / totalCycles) * 100);
               const activeMembers = customerCounts[b.id] ?? 0;
 

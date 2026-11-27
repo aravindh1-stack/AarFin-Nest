@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
   if (nexfixSessionCookie) {
     try {
       const parsed = JSON.parse(nexfixSessionCookie);
-      role = normalizeRole(parsed.role);
+      role = normalizeRole(parsed.role, parsed.email);
     } catch {
       role = "ADMIN";
     }
@@ -32,8 +32,8 @@ export function middleware(request: NextRequest) {
 
   // Enforce Route Protection based on RBAC
   if (!isRouteAllowed(role, pathname)) {
-    // If field officer tries to access root dashboard, redirect to their home (Collections)
-    if (role === "FIELD_OFFICER") {
+    // If editor / field officer tries to access root dashboard or restricted route, redirect to Collections
+    if (role === "EDITOR") {
       const collectionsUrl = new URL('/dashboard/collections', request.url);
       return NextResponse.redirect(collectionsUrl);
     }

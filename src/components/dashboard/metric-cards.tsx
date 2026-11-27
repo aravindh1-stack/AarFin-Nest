@@ -2,33 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { SkeletonBlock } from "@/components/skeleton-block";
-import { Layers, Users, Receipt, MapPin, Activity } from "lucide-react";
+import { Layers, Users, Receipt, MapPin } from "lucide-react";
+
+interface MetricsData {
+  activeSchemes: number;
+  registeredMembers: number;
+  operatingRoutes: number;
+  realizedCollectionsFormatted: string;
+}
 
 export function MetricCards() {
-  const [batchesCount, setBatchesCount] = useState<number | string>("...");
-  const [customersCount, setCustomersCount] = useState<number | string>("...");
-  const [groupsCount, setGroupsCount] = useState<number | string>("...");
-  const [totalCollections, setTotalCollections] = useState<string>("₹0");
+  const [metricsData, setMetricsData] = useState<MetricsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadMetrics() {
       setLoading(true);
       try {
-        const [bRes, cRes, gRes, pRes] = await Promise.all([
-          fetch("/api/batches").then((r) => r.json()),
-          fetch("/api/customers").then((r) => r.json()),
-          fetch("/api/groups").then((r) => r.json()),
-          fetch("/api/payments").then((r) => r.json()),
-        ]);
-
-        if (Array.isArray(bRes)) setBatchesCount(bRes.length);
-        if (Array.isArray(cRes)) setCustomersCount(cRes.length);
-        if (Array.isArray(gRes)) setGroupsCount(gRes.length);
-
-        if (Array.isArray(pRes)) {
-          const totalSum = pRes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-          setTotalCollections(`₹${totalSum.toLocaleString("en-IN")}`);
+        const res = await fetch("/api/dashboard/metrics");
+        const data = await res.json();
+        if (data && data.metrics) {
+          setMetricsData(data.metrics);
         }
       } catch (err) {
         console.error("Error fetching live metrics:", err);
@@ -44,34 +38,37 @@ export function MetricCards() {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonBlock key={i} className="h-32 w-full rounded-2xl bg-white border border-slate-200/80 dark:bg-[#121614] dark:border-[#1F2623]" />
+          <SkeletonBlock
+            key={i}
+            className="h-32 w-full rounded-2xl bg-white border border-slate-200/80 dark:bg-[#121614] dark:border-[#1F2623]"
+          />
         ))}
       </div>
     );
   }
 
-  const metrics = [
+  const cards = [
     {
       label: "Active Schemes & Batches",
-      value: String(batchesCount),
+      value: String(metricsData?.activeSchemes ?? 0),
       status: "Live Ledger Sync",
       icon: Layers,
     },
     {
       label: "Registered Members",
-      value: String(customersCount),
+      value: String(metricsData?.registeredMembers ?? 0),
       status: "Active Portfolio",
       icon: Users,
     },
     {
       label: "Realized Collections",
-      value: totalCollections,
+      value: metricsData?.realizedCollectionsFormatted ?? "₹0",
       status: "Atomic FIFO Ledger",
       icon: Receipt,
     },
     {
       label: "Operating Route Beats",
-      value: String(groupsCount),
+      value: String(metricsData?.operatingRoutes ?? 0),
       status: "Regional Allocation",
       icon: MapPin,
     },
@@ -79,7 +76,7 @@ export function MetricCards() {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-      {metrics.map((metric) => {
+      {cards.map((metric) => {
         const IconComp = metric.icon;
         return (
           <div
@@ -99,9 +96,9 @@ export function MetricCards() {
               {metric.value}
             </p>
 
-            <div className="mt-3 flex items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                <Activity className="h-3 w-3" />
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs text-slate-500 dark:text-neutral-400 font-medium">
                 {metric.status}
               </span>
             </div>

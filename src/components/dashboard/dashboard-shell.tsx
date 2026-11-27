@@ -25,6 +25,7 @@ import {
   Moon,
   Sun,
   LogOut,
+  UserCheck,
 } from "lucide-react";
 
 interface MobileNavContextType {
@@ -76,6 +77,7 @@ const allDrawerNavGroups = [
   {
     label: "ADMINISTRATION",
     items: [
+      { label: "Team & Staff", href: "/dashboard/team", icon: UserCheck },
       { label: "Branch Tenants", href: "/dashboard/branches", icon: Building2 },
       { label: "SaaS Billing", href: "/dashboard/billing", icon: CreditCard },
       { label: "Settings", href: "/dashboard/settings", icon: Settings },

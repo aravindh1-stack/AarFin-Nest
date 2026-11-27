@@ -17,7 +17,8 @@ export const supabaseAdmin = {
         const data = await res.json();
         return { data: Array.isArray(data) ? data : [], error: res.ok ? null : data };
       },
-      insert: async (records: any[]) => {
+      insert: async (records: any | any[]) => {
+        const payload = Array.isArray(records) ? records : [records];
         const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
           method: 'POST',
           headers: {
@@ -26,7 +27,7 @@ export const supabaseAdmin = {
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
-          body: JSON.stringify(records)
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         return { data, error: res.ok ? null : data };

@@ -303,16 +303,24 @@ export function CollectionsHub() {
 
     try {
       const receiptNo = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `idemp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
       const res = await fetch("/api/payments", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": idempotencyKey,
+        },
         body: JSON.stringify({
           customer_id: (member as any).dbId || member.id,
+          batch_id: (member as any).batchId || null,
           amount_paid: amount,
           payment_method: "CASH",
           receipt_no: receiptNo,
-          notes: "1-Tap Quick Field Collection",
+          idempotency_key: idempotencyKey,
+          notes: "1-Tap Quick Field Collection (FIFO Waterfall)",
           payment_date: new Date().toISOString(),
         }),
       });

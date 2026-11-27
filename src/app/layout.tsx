@@ -1,16 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Urbanist } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/page-loader";
 import { RouteProgressBar } from "@/components/route-progress-bar";
 import "./globals.css";
-
-const urbanist = Urbanist({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-urbanist",
-  display: "swap",
-});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -36,10 +28,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark h-full antialiased overflow-x-hidden ${urbanist.variable}`}
+      className="dark h-full antialiased overflow-x-hidden"
       suppressHydrationWarning
     >
-      <body className={`min-h-full ${urbanist.className} antialiased text-slate-900 bg-[#F8FAFC] dark:bg-[#090B0A] dark:text-[#ECEDEE] selection:bg-emerald-500/20 overflow-x-hidden w-full max-w-full`}>
+      <body className="min-h-full font-sans antialiased text-slate-900 bg-[#F8FAFC] dark:bg-[#090B0A] dark:text-[#ECEDEE] selection:bg-emerald-500/20 overflow-x-hidden w-full max-w-full">
         <ThemeProvider>
           <PageLoader />
           <RouteProgressBar />

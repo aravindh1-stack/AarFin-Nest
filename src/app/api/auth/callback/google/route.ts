@@ -30,14 +30,16 @@ export async function GET(request: NextRequest) {
 
   if (oauthError || !code) {
     const errorMsg = encodeURIComponent(oauthError || "Authorization code missing from Google callback");
-    return NextResponse.redirect(`${origin}/login?error=${errorMsg}`);
+    return NextResponse.redirect(`${origin}/login?error=OAUTH_ERROR&message=${errorMsg}`);
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent("Google OAuth credentials missing on server")}`);
+    return NextResponse.redirect(
+      `${origin}/login?error=CONFIG_ERROR&message=${encodeURIComponent("Google OAuth credentials missing on server")}`
+    );
   }
 
   try {
@@ -60,7 +62,9 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok || !tokenData.access_token) {
       console.error("Google Token Exchange Failed:", tokenData);
-      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent("Google token verification failed")}`);
+      return NextResponse.redirect(
+        `${origin}/login?error=OAUTH_TOKEN_FAILED&message=${encodeURIComponent("Google token verification failed")}`
+      );
     }
 
     // 2. Fetch authenticated Google User Profile
@@ -71,7 +75,9 @@ export async function GET(request: NextRequest) {
     const googleUser = await userInfoRes.json();
 
     if (!userInfoRes.ok || !googleUser.email) {
-      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent("Could not read email from Google account")}`);
+      return NextResponse.redirect(
+        `${origin}/login?error=OAUTH_NO_EMAIL&message=${encodeURIComponent("Could not read email from Google account")}`
+      );
     }
 
     const email = (googleUser.email as string).toLowerCase().trim();
@@ -96,20 +102,10 @@ export async function GET(request: NextRequest) {
 
     // Check if user is allowlisted
     if (!matchedAdmin) {
-      // UNAUTHORIZED: Not in organization allowlist. Route to Pending Access screen
-      const pendingResponse = NextResponse.redirect(`${origin}/pending-access`);
-
-      pendingResponse.cookies.set("nexfix_pending", JSON.stringify({
-        email,
-        name,
-        picture,
-        attemptedAt: new Date().toISOString(),
-      }), {
-        path: "/",
-        maxAge: 3600,
-        sameSite: "lax",
-        httpOnly: false,
-      });
+      // UNAUTHORIZED: Not in organization allowlist.
+      // Redirect back to /login with PENDING_APPROVAL and email param
+      const unapprovedUrl = `${origin}/login?error=PENDING_APPROVAL&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`;
+      const pendingResponse = NextResponse.redirect(unapprovedUrl);
 
       // Clear any active session
       pendingResponse.cookies.delete("aarfin_session");
@@ -131,7 +127,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Route target based on role
-    const destinationPath = role === "FIELD_OFFICER" ? "/dashboard/collections" : "/dashboard";
+    const destinationPath = role === "EDITOR" ? "/dashboard/collections" : "/dashboard";
     const successResponse = NextResponse.redirect(`${origin}${destinationPath}`);
 
     // Set cookies
@@ -149,12 +145,11 @@ export async function GET(request: NextRequest) {
       httpOnly: false,
     });
 
-    // Remove pending cookie if any
-    successResponse.cookies.delete("nexfix_pending");
-
     return successResponse;
   } catch (err: any) {
     console.error("Google OAuth Callback Exception:", err);
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(err.message || "Authentication error")}`);
+    return NextResponse.redirect(
+      `${origin}/login?error=AUTH_EXCEPTION&message=${encodeURIComponent(err.message || "Authentication error")}`
+    );
   }
 }

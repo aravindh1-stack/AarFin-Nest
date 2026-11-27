@@ -21,6 +21,7 @@ import {
   Sun,
   Moon,
   LogOut,
+  UserCheck,
 } from "lucide-react";
 
 const allNavGroups = [
@@ -45,6 +46,7 @@ const allNavGroups = [
   {
     label: "ORGANIZATION",
     items: [
+      { label: "Team & Staff", href: "/dashboard/team", icon: UserCheck },
       { label: "Branch Tenants", href: "/dashboard/branches", icon: Building2 },
       { label: "SaaS Billing", href: "/dashboard/billing", icon: CreditCard },
       { label: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -54,14 +56,14 @@ const allNavGroups = [
 
 function getRoleBadge(role: string) {
   switch (role) {
+    case "SUPER_ADMIN":
+      return "Owner / Root Admin";
     case "ADMIN":
-      return "Super Admin · Owner";
-    case "BRANCH_MANAGER":
-      return "Branch Manager";
-    case "CASHIER":
-      return "Head Cashier";
-    case "FIELD_OFFICER":
-      return "Field Collection Officer";
+      return "Operations Lead";
+    case "EDITOR":
+      return "Field Desk";
+    case "VIEWER":
+      return "Auditor / Read-Only";
     default:
       return role;
   }

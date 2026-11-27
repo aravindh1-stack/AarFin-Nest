@@ -9,9 +9,9 @@ export interface BrandLogoProps {
 }
 
 /**
- * BrandLogo renders the AarFin Nest brand logo.
- * - In light theme (or when variant="light"): uses `/nexfix.png`
- * - In dark theme (or when variant="dark"): uses `/nexfix-white.png`
+ * BrandLogo renders the NexFix brand logo.
+ * - In light theme (or when variant="light"): uses `/nexfix-dark.png`
+ * - In dark theme (or when variant="dark"): uses `/nexfix-light.png`
  * - In "auto" mode: toggles seamlessly via CSS without hydration flash.
  */
 export function BrandLogo({
@@ -23,10 +23,10 @@ export function BrandLogo({
   if (variant === "dark") {
     return (
       <Image
-        src="/nexfix-white.png"
+        src="/nexfix-light.png"
         alt={alt}
         width={120}
-        height={32}
+        height={120}
         priority={priority}
         className={className}
       />
@@ -36,10 +36,10 @@ export function BrandLogo({
   if (variant === "light") {
     return (
       <Image
-        src="/nexfix.png"
+        src="/nexfix-dark.png"
         alt={alt}
         width={120}
-        height={32}
+        height={120}
         priority={priority}
         className={className}
       />
@@ -50,19 +50,19 @@ export function BrandLogo({
     <>
       {/* Light theme logo */}
       <Image
-        src="/nexfix.png"
+        src="/nexfix-dark.png"
         alt={alt}
         width={120}
-        height={32}
+        height={120}
         priority={priority}
         className={`block dark:hidden ${className}`}
       />
       {/* Dark theme logo */}
       <Image
-        src="/nexfix-white.png"
+        src="/nexfix-light.png"
         alt={alt}
         width={120}
-        height={32}
+        height={120}
         priority={priority}
         className={`hidden dark:block ${className}`}
       />

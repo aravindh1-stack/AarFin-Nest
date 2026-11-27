@@ -47,6 +47,27 @@ export const supabaseAdmin = {
           const data = await res.json();
           return { data, error: res.ok ? null : data };
         }
+      }),
+      delete: () => ({
+        eq: async (column: string, value: any) => {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${column}=eq.${encodeURIComponent(value)}`, {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_SERVICE_ROLE_KEY,
+              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+          });
+          const text = await res.text();
+          let data = null;
+          try {
+            data = text ? JSON.parse(text) : null;
+          } catch {
+            data = text;
+          }
+          return { data, error: res.ok ? null : data };
+        }
       })
     };
   }

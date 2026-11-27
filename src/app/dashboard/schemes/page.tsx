@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { SkeletonBlock } from "@/components/skeleton-block";
 import {
@@ -11,6 +12,9 @@ import {
   Info,
   CheckCircle2,
   X,
+  Users,
+  Calendar,
+  ArrowRight,
 } from "lucide-react";
 
 interface Batch {
@@ -18,13 +22,16 @@ interface Batch {
   batch_name: string;
   batch_code: string;
   scheme_category?: string;
+  frequency_type?: string;
   installment_amount: number;
   total_cycles: number;
   start_date: string;
+  end_date?: string;
 }
 
 export default function SchemesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [customerCounts, setCustomerCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showAuctionModal, setShowAuctionModal] = useState(false);
@@ -47,12 +54,29 @@ export default function SchemesPage() {
   const [startDate, setStartDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [intervalDays, setIntervalDays] = useState(1);
 
-  const fetchBatches = async () => {
+  const fetchBatchesAndCustomers = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/batches");
-      const data = await res.json();
-      if (Array.isArray(data)) setBatches(data);
+      const [bRes, cRes] = await Promise.all([
+        fetch("/api/batches").then((r) => r.json()),
+        fetch("/api/customers").then((r) => r.json()),
+      ]);
+
+      if (Array.isArray(bRes)) setBatches(bRes);
+
+      if (Array.isArray(cRes) && Array.isArray(bRes)) {
+        const counts: Record<string, number> = {};
+        bRes.forEach((b) => {
+          const matching = cRes.filter(
+            (c) =>
+              c.batch_id === b.id ||
+              c.batch_id === b.batch_code ||
+              (c.batch_name && c.batch_name.toLowerCase() === b.batch_name.toLowerCase())
+          );
+          counts[b.id] = matching.length;
+        });
+        setCustomerCounts(counts);
+      }
     } catch (err) {
       console.error("Error fetching batches:", err);
     } finally {
@@ -61,7 +85,7 @@ export default function SchemesPage() {
   };
 
   useEffect(() => {
-    fetchBatches();
+    fetchBatchesAndCustomers();
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -103,7 +127,7 @@ export default function SchemesPage() {
         setShowModal(false);
         setTitle("");
         setCode("");
-        fetchBatches();
+        fetchBatchesAndCustomers();
       } else {
         const data = await res.json().catch(() => ({}));
         setFormError(data.error || "Failed to create scheme batch");
@@ -116,115 +140,191 @@ export default function SchemesPage() {
     }
   };
 
+  const getSchemeTypeBadge = (freq?: string) => {
+    switch (freq) {
+      case "DAILY":
+        return { label: "Dhina Kandhu", tag: "DAILY" };
+      case "WEEKLY":
+        return { label: "Vaara Kandhu", tag: "WEEKLY" };
+      case "MONTHLY":
+      default:
+        return { label: "Palagara Seetu", tag: "MONTHLY" };
+    }
+  };
+
   return (
-    <div>
+    <div className="space-y-6 w-full max-w-full min-w-0">
       <DashboardTopbar
         title="Schemes & Batches"
         description="Configure Seetu & Kandhu scheme batches and cycle rules"
       />
 
-      <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 px-4 py-2 sm:px-6 lg:px-8 w-full max-w-full min-w-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">
               Active Scheme Batches
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Active scheme rules, total cycles, and installment parameters
+            <p className="text-xs text-slate-500 dark:text-neutral-400">
+              Active cycle progression, installment rules, and chit auction pools
             </p>
           </div>
           <button
             type="button"
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
+            className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-4 py-2 text-xs shadow-xs transition hover:bg-emerald-500 dark:hover:bg-[#0EA57E] cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             <span>Create New Scheme</span>
           </button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <SkeletonBlock key={i} className="h-44 w-full rounded-2xl" />
+              <SkeletonBlock key={i} className="h-56 w-full rounded-2xl bg-white border border-slate-200/80 dark:bg-[#121614] dark:border-[#1F2623]" />
             ))
-          ) : (
-            batches.map((b) => (
-              <div
-                key={b.id}
-                className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 dark:border-[#202425] dark:bg-[#151718]/70"
+          ) : batches.length === 0 ? (
+            <div className="col-span-full rounded-2xl border border-slate-200/80 bg-white p-10 text-center dark:border-[#1F2623] dark:bg-[#121614]">
+              <Layers className="mx-auto h-8 w-8 text-slate-300 dark:text-neutral-600 mb-2" />
+              <p className="text-sm font-medium text-slate-900 dark:text-white">No active schemes found</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400">Create your first Palagara Seetu or Kandhu batch to begin.</p>
+              <button
+                type="button"
+                onClick={() => setShowModal(true)}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-4 py-2 text-xs hover:bg-emerald-500 dark:hover:bg-[#0EA57E] transition cursor-pointer"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-teal-600 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
-                    <Layers className="h-4 w-4" />
-                  </div>
-                  <div className="flex gap-1.5">
-                    <span className="rounded-full bg-teal-500/10 px-2.5 py-0.5 text-[10px] font-bold text-teal-600 dark:text-teal-400">
-                      {(b as any).frequency_type || "WEEKLY"}
-                    </span>
-                    <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                      ACTIVE
-                    </span>
-                  </div>
-                </div>
-                <h3 className="mt-4 text-base font-bold text-slate-900 dark:text-white">
-                  {b.batch_name}
-                </h3>
-                <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                  {b.batch_code}
-                </p>
+                <Plus className="h-3.5 w-3.5" />
+                <span>Create Scheme</span>
+              </button>
+            </div>
+          ) : (
+            batches.map((b) => {
+              const typeInfo = getSchemeTypeBadge(b.frequency_type);
+              const totalCycles = Number(b.total_cycles) || 20;
+              const currentCycle = Math.min(12, totalCycles);
+              const progressPct = Math.round((currentCycle / totalCycles) * 100);
+              const activeMembers = customerCounts[b.id] ?? 0;
 
-                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-200/70 pt-3 text-xs dark:border-[#202425]">
+              return (
+                <div
+                  key={b.id}
+                  className="rounded-2xl border border-slate-200/80 bg-white p-5 transition hover:border-emerald-500/40 shadow-xs dark:border-[#1F2623] dark:bg-[#121614] dark:hover:border-[#10B981]/40 flex flex-col justify-between"
+                >
                   <div>
-                    <p className="text-[10px] text-slate-400">Installment</p>
-                    <p className="font-bold text-teal-600 dark:text-teal-400">
-                      ₹{Number(b.installment_amount || 0).toLocaleString("en-IN")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400">Total Cycles</p>
-                    <p className="font-bold text-slate-800 dark:text-slate-200">
-                      {b.total_cycles || 20} Cycles
-                    </p>
-                  </div>
-                </div>
+                    {/* Header: Scheme Name & Badges */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-emerald-600 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-[#10B981]">
+                          <Layers className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight">
+                            {b.batch_name}
+                          </h3>
+                          <p className="text-xs font-mono text-slate-500 dark:text-neutral-400 tabular-nums">
+                            {b.batch_code}
+                          </p>
+                        </div>
+                      </div>
 
-                <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedAuctionBatch(b);
-                      setShowAuctionModal(true);
-                      setAuctionSuccess(false);
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-teal-500/30 bg-teal-500/5 py-2 text-xs font-bold text-teal-700 hover:bg-teal-500/10 dark:text-teal-300 dark:hover:bg-teal-400/10 transition cursor-pointer"
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    <span>Run Chit Auction & Dividend</span>
-                  </button>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                          {typeInfo.label}
+                        </span>
+                        <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-neutral-500">
+                          {typeInfo.tag}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Body: Cycle Progression */}
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 dark:text-neutral-400">Cycle Progression</span>
+                        <span className="font-mono font-semibold tabular-nums text-slate-900 dark:text-white">
+                          Cycle {currentCycle} / {totalCycles}
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-[#0E1110] border border-slate-200/80 dark:border-[#1F2623]">
+                        <div
+                          className="h-full rounded-full bg-emerald-600 dark:bg-[#10B981] transition-all duration-500"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Metrics: Installment Amount & Active Members */}
+                    <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-[#1F2623] pt-3 text-xs">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-neutral-400">Installment</p>
+                        <p className="mt-0.5 text-base font-semibold font-mono tabular-nums text-emerald-600 dark:text-[#10B981]">
+                          ₹{Number(b.installment_amount || 0).toLocaleString("en-IN")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-neutral-400">Active Members</p>
+                        <p className="mt-0.5 text-base font-semibold font-mono tabular-nums text-slate-900 dark:text-white inline-flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5 text-slate-400 dark:text-neutral-400" />
+                          <span>{activeMembers} Members</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer: Next Auction / Due Date & Actions */}
+                  <div className="mt-5 space-y-2 border-t border-slate-100 dark:border-[#1F2623] pt-3">
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
+                      <span className="inline-flex items-center gap-1 font-mono tabular-nums">
+                        <Calendar className="h-3 w-3 text-slate-400 dark:text-neutral-400" />
+                        Next Cycle: {b.start_date || "Live"}
+                      </span>
+                      <Link
+                        href="/dashboard/collections"
+                        className="inline-flex items-center gap-0.5 text-xs text-slate-600 hover:text-slate-900 dark:text-neutral-300 dark:hover:text-white transition"
+                      >
+                        <span>Ledger</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAuctionBatch(b);
+                        setShowAuctionModal(true);
+                        setAuctionSuccess(false);
+                      }}
+                      className="w-full flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-98 transition cursor-pointer"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>Run Chit Auction & Dividend</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
 
+      {/* CREATE SCHEME MODAL */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-3 sm:p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-2xl dark:border-[#202425] dark:bg-[#151718] max-h-[92vh] overflow-y-auto">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-200/70 pb-3 dark:border-[#202425]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto dark:border-[#1F2623] dark:bg-[#121614]">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-[#1F2623] pb-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                   Create New Scheme Batch
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">
                   Configure scheme installment parameters and collection cadence.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white cursor-pointer"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white transition cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -239,7 +339,7 @@ export default function SchemesPage() {
 
             <form onSubmit={handleCreate} className="mt-4 space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                <label className="block font-medium text-slate-700 dark:text-neutral-300">
                   Scheme Name *
                 </label>
                 <input
@@ -248,12 +348,12 @@ export default function SchemesPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Daily Seetu B1"
-                  className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                  className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-white dark:focus:border-[#10B981]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                <label className="block font-medium text-slate-700 dark:text-neutral-300">
                   Batch Code
                 </label>
                 <input
@@ -261,13 +361,13 @@ export default function SchemesPage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="e.g. BTC-2026-01"
-                  className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                  className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-white dark:focus:border-[#10B981]"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="block font-medium text-slate-700 dark:text-neutral-300">
                     Installment Amount (₹) *
                   </label>
                   <input
@@ -277,11 +377,11 @@ export default function SchemesPage() {
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
                     placeholder="5000"
-                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-bold"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-mono font-bold tabular-nums text-slate-900 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-white dark:focus:border-[#10B981]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="block font-medium text-slate-700 dark:text-neutral-300">
                     Total Cycles Count *
                   </label>
                   <input
@@ -291,13 +391,13 @@ export default function SchemesPage() {
                     value={cycles}
                     onChange={(e) => setCycles(Number(e.target.value))}
                     placeholder="20"
-                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-bold"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-mono font-bold tabular-nums text-slate-900 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-white dark:focus:border-[#10B981]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                <label className="block font-medium text-slate-700 dark:text-neutral-300">
                   Collection Frequency
                 </label>
                 <div className="mt-1.5 grid grid-cols-3 gap-2">
@@ -306,10 +406,10 @@ export default function SchemesPage() {
                       key={freq}
                       type="button"
                       onClick={() => setFrequency(freq)}
-                      className={`min-h-[44px] rounded-xl py-2 text-xs font-bold transition cursor-pointer flex items-center justify-center ${
+                      className={`min-h-[44px] rounded-xl py-2 text-xs font-semibold transition cursor-pointer flex items-center justify-center ${
                         frequency === freq
-                          ? "bg-teal-700 text-white shadow-md dark:bg-teal-600"
-                          : "border border-slate-200 text-slate-700 hover:border-teal-500/40 hover:bg-slate-50 dark:border-[#202425] dark:text-slate-300 dark:hover:bg-white/5"
+                          ? "bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black"
+                          : "border border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-neutral-400 dark:hover:text-white"
                       }`}
                     >
                       {freq}
@@ -320,7 +420,7 @@ export default function SchemesPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="block font-medium text-slate-700 dark:text-neutral-300">
                     Interval Gap ({frequency === "DAILY" ? "Days" : frequency === "WEEKLY" ? "Weeks" : "Months"})
                   </label>
                   <input
@@ -328,45 +428,44 @@ export default function SchemesPage() {
                     min={1}
                     value={intervalDays}
                     onChange={(e) => setIntervalDays(Math.max(1, Number(e.target.value)))}
-                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white font-semibold"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-white dark:focus:border-[#10B981] font-mono tabular-nums"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="block font-medium text-slate-700 dark:text-neutral-300">
                     Batch Start Date
                   </label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white"
+                    className="mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-white dark:focus:border-[#10B981]"
                   />
                 </div>
               </div>
 
-              {/* Cadence Summary Helper Banner */}
-              <div className="flex items-center gap-2 rounded-xl border border-teal-500/20 bg-teal-500/5 p-3 text-xs leading-relaxed text-teal-800 dark:text-teal-300">
-                <Info className="h-4 w-4 shrink-0" />
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs leading-relaxed text-emerald-800 dark:text-emerald-300">
+                <Info className="h-4 w-4 shrink-0 text-emerald-600 dark:text-[#10B981]" />
                 <div>
-                  <span className="font-semibold">Cadence Rule:</span> For this scheme, collections will be due once every{" "}
-                  <span className="font-extrabold underline text-teal-700 dark:text-teal-200">
+                  <span className="font-semibold text-slate-900 dark:text-white">Cadence Rule:</span> Collections will be due once every{" "}
+                  <span className="font-bold underline text-emerald-700 dark:text-[#10B981]">
                     {intervalDays} {frequency === "DAILY" ? (intervalDays === 1 ? "day" : "days") : frequency === "WEEKLY" ? (intervalDays === 1 ? "week" : "weeks") : (intervalDays === 1 ? "month" : "months")}
                   </span>.
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-200/70 dark:border-[#202425]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-200 dark:border-[#1F2623]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-[#202425] dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 px-5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-[#1F2623] dark:text-neutral-300 dark:hover:bg-white/5 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-teal-600 disabled:opacity-50 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-6 py-2.5 text-xs shadow-md hover:bg-emerald-500 dark:hover:bg-[#0EA57E] disabled:opacity-50 cursor-pointer transition"
                 >
                   {submitting ? "Saving..." : "Save Scheme"}
                 </button>
@@ -376,9 +475,7 @@ export default function SchemesPage() {
         </div>
       )}
 
-      {/* ==================================================== */}
-      {/* CHIT FUND (PALAGARA SEETU) AUCTION & DIVIDEND MODAL */}
-      {/* ==================================================== */}
+      {/* CHIT AUCTION & DIVIDEND MODAL */}
       {showAuctionModal && selectedAuctionBatch && (() => {
         const batchInst = Number(selectedAuctionBatch.installment_amount) || 5000;
         const totalCycles = Number(selectedAuctionBatch.total_cycles) || 20;
@@ -390,27 +487,26 @@ export default function SchemesPage() {
         const winnerPrizePayout = chitPool - bidDiscount;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#202425] dark:bg-[#121518] space-y-5 animate-in fade-in zoom-in-95">
-              
-              <div className="flex items-start justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5 dark:border-[#1F2623] dark:bg-[#121614]">
+              <div className="flex items-start justify-between border-b border-slate-200 dark:border-[#1F2623] pb-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-slate-900 dark:text-white">
+                    <span className="text-base font-semibold text-slate-900 dark:text-white">
                       Monthly Chit Auction & Dividend Engine
                     </span>
-                    <span className="text-[10px] font-mono font-bold bg-teal-500/10 text-teal-600 px-2 py-0.5 rounded-full dark:text-teal-400">
+                    <span className="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
                       Cycle #14
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Batch: <strong className="text-slate-800 dark:text-slate-200">{selectedAuctionBatch.batch_name}</strong> • Pool Value: <strong className="font-mono text-teal-600 dark:text-teal-400">₹{chitPool.toLocaleString("en-IN")}</strong>
+                  <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                    Batch: <strong className="text-slate-900 dark:text-white">{selectedAuctionBatch.batch_name}</strong> • Pool Value: <strong className="font-mono tabular-nums text-emerald-600 dark:text-[#10B981]">₹{chitPool.toLocaleString("en-IN")}</strong>
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowAuctionModal(false)}
-                  className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white transition cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -418,40 +514,38 @@ export default function SchemesPage() {
 
               {auctionSuccess ? (
                 <div className="p-6 text-center space-y-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
-                  <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
-                  <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-[#10B981] mx-auto" />
+                  <h4 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                     Chit Auction Closed & Dividend Applied
                   </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300">
-                    Winning Bid recorded for <strong>{winnerName}</strong> with net payout of <strong>₹{winnerPrizePayout.toLocaleString("en-IN")}</strong>.<br />
-                    All {totalCycles} members credited with <strong>₹{dividendPerMember.toLocaleString("en-IN")} dividend discount</strong>.
+                  <p className="text-xs text-slate-700 dark:text-neutral-300">
+                    Winning Bid recorded for <strong>{winnerName}</strong> with net payout of <strong className="font-mono tabular-nums text-slate-900 dark:text-white">₹{winnerPrizePayout.toLocaleString("en-IN")}</strong>.<br />
+                    All {totalCycles} members credited with <strong className="font-mono tabular-nums text-emerald-600 dark:text-emerald-400">₹{dividendPerMember.toLocaleString("en-IN")} dividend discount</strong>.
                   </p>
                   <button
                     type="button"
                     onClick={() => setShowAuctionModal(false)}
-                    className="mt-2 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-500"
+                    className="mt-2 rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-5 py-2 text-xs hover:bg-emerald-500 dark:hover:bg-[#0EA57E] transition cursor-pointer"
                   >
                     Done & Return
                   </button>
                 </div>
               ) : (
                 <div className="space-y-4 text-xs">
-                  
-                  {/* Winner and Bid Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
                         Auction Winning Member
                       </label>
                       <input
                         type="text"
                         value={winnerName}
                         onChange={(e) => setWinnerName(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-900 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-900 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-white dark:focus:border-[#10B981]"
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block font-medium text-slate-700 dark:text-neutral-300 mb-1">
                         Winning Bid Discount Amount (₹)
                       </label>
                       <input
@@ -459,16 +553,15 @@ export default function SchemesPage() {
                         step={500}
                         value={bidDiscount}
                         onChange={(e) => setBidDiscount(Math.max(0, Number(e.target.value)))}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono font-bold text-teal-600 outline-none focus:border-teal-500 dark:border-slate-800 dark:bg-slate-900 dark:text-teal-400"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono font-bold tabular-nums text-emerald-600 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-[#10B981] dark:focus:border-[#10B981]"
                       />
                     </div>
                   </div>
 
-                  {/* Foreman Commission Slider */}
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2">
-                    <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-300">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 dark:bg-[#0E1110] dark:border-[#1F2623] space-y-2">
+                    <div className="flex justify-between font-medium text-slate-700 dark:text-neutral-300">
                       <span>Foreman Organizer Commission</span>
-                      <span className="font-mono text-teal-600 dark:text-teal-400">{foremanPercent}% (₹{foremanFee.toLocaleString("en-IN")})</span>
+                      <span className="font-mono tabular-nums text-emerald-600 dark:text-[#10B981]">{foremanPercent}% (₹{foremanFee.toLocaleString("en-IN")})</span>
                     </div>
                     <input
                       type="range"
@@ -477,66 +570,62 @@ export default function SchemesPage() {
                       step={0.5}
                       value={foremanPercent}
                       onChange={(e) => setForemanPercent(Number(e.target.value))}
-                      className="w-full accent-teal-500 cursor-pointer"
+                      className="w-full accent-emerald-600 dark:accent-[#10B981] cursor-pointer"
                     />
-                    <div className="flex justify-between text-[10px] text-slate-400">
-                      <span>0% (No commission)</span>
+                    <div className="flex justify-between text-[10px] text-slate-400 dark:text-neutral-500">
+                      <span>0% (No fee)</span>
                       <span>5% (Statutory Standard)</span>
                       <span>10% (Maximum Cap)</span>
                     </div>
                   </div>
 
-                  {/* Mathematical Waterfall Breakdown */}
-                  <div className="rounded-2xl border border-teal-500/20 bg-teal-500/5 p-4 space-y-2.5 font-mono">
-                    <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2 font-mono">
+                    <div className="flex justify-between text-slate-600 dark:text-neutral-400">
                       <span>Gross Chit Value:</span>
-                      <span className="font-bold text-slate-900 dark:text-white">₹{chitPool.toLocaleString("en-IN")}</span>
+                      <span className="font-bold tabular-nums text-slate-900 dark:text-white">₹{chitPool.toLocaleString("en-IN")}</span>
                     </div>
                     <div className="flex justify-between text-rose-600 dark:text-rose-400">
                       <span>- Auction Bid Discount:</span>
-                      <span>-₹{bidDiscount.toLocaleString("en-IN")}</span>
+                      <span className="tabular-nums">-₹{bidDiscount.toLocaleString("en-IN")}</span>
                     </div>
-                    <div className="flex justify-between border-t border-slate-200 pt-1.5 dark:border-slate-800 font-bold text-emerald-600 dark:text-emerald-400">
+                    <div className="flex justify-between border-t border-slate-200 dark:border-[#1F2623] pt-1.5 font-bold text-emerald-700 dark:text-emerald-400">
                       <span>Winner Payout (Prize Money):</span>
-                      <span className="text-sm">₹{winnerPrizePayout.toLocaleString("en-IN")}</span>
+                      <span className="text-sm tabular-nums">₹{winnerPrizePayout.toLocaleString("en-IN")}</span>
                     </div>
-                    <div className="flex justify-between border-t border-slate-200 pt-1.5 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                    <div className="flex justify-between border-t border-slate-200 dark:border-[#1F2623] pt-1.5 text-slate-600 dark:text-neutral-400">
                       <span>Total Dividend Pool:</span>
-                      <span>₹{netDividendPool.toLocaleString("en-IN")}</span>
+                      <span className="tabular-nums">₹{netDividendPool.toLocaleString("en-IN")}</span>
                     </div>
-                    <div className="flex justify-between text-cyan-600 dark:text-cyan-400 font-bold">
+                    <div className="flex justify-between text-sky-600 dark:text-sky-400 font-semibold">
                       <span>Dividend per Member ({totalCycles} members):</span>
-                      <span>-₹{dividendPerMember.toLocaleString("en-IN")} Discount</span>
+                      <span className="tabular-nums">-₹{dividendPerMember.toLocaleString("en-IN")} Discount</span>
                     </div>
-                    <div className="flex justify-between border-t border-dashed border-teal-500/40 pt-2 text-xs font-bold text-slate-900 dark:text-white">
-                      <span>Next Month Due to Pay per Member:</span>
-                      <span className="text-sm font-extrabold text-teal-600 dark:text-teal-400">
-                        ₹{netInstallmentToPay.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 line-through">₹{batchInst.toLocaleString("en-IN")}</span>
+                    <div className="flex justify-between border-t border-dashed border-emerald-500/30 pt-2 text-xs font-bold text-slate-900 dark:text-white">
+                      <span>Next Due to Pay per Member:</span>
+                      <span className="text-sm font-extrabold tabular-nums text-emerald-600 dark:text-[#10B981]">
+                        ₹{netInstallmentToPay.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 dark:text-neutral-500 line-through">₹{batchInst.toLocaleString("en-IN")}</span>
                       </span>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex justify-end gap-2 pt-2">
+                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-[#1F2623]">
                     <button
                       type="button"
                       onClick={() => setShowAuctionModal(false)}
-                      className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400"
+                      className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-[#1F2623] dark:text-neutral-300 dark:hover:bg-white/5 cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={() => setAuctionSuccess(true)}
-                      className="rounded-xl bg-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-teal-500"
+                      className="rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-5 py-2 text-xs shadow-md hover:bg-emerald-500 dark:hover:bg-[#0EA57E] cursor-pointer transition"
                     >
                       Confirm Auction & Apply Member Dividends
                     </button>
                   </div>
-
                 </div>
               )}
-
             </div>
           </div>
         );

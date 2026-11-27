@@ -5,6 +5,7 @@ import { type Member } from "@/lib/mock-members";
 import { MemberDrawer } from "@/components/collections/member-drawer";
 import { SkeletonBlock } from "@/components/skeleton-block";
 import { ReceiptModal, type ReceiptData } from "@/components/collections/receipt-modal";
+import { Search, Zap, BookOpen, RotateCcw, Users, ArrowRight } from "lucide-react";
 
 const filters = ["All", "Has Dues", "Has Advance", "Fully Paid"] as const;
 type Filter = (typeof filters)[number];
@@ -72,18 +73,13 @@ export function CollectionsHub() {
           const totalPaidSum = memberPayments.reduce((acc: number, curr: any) => acc + (Number(curr.amount_paid) || 0), 0);
           const paidCyclesCount = Math.floor(totalPaidSum / instAmt);
 
-          // Read custom interval gap configured in scheme batch
           const intervalGap = Number(batch.interval_days || batch.interval_gap || 1);
-
-          // Read Late Joiner Policy (OPTION_A, OPTION_B, OPTION_C)
           const policy = c.late_joiner_policy || "OPTION_A";
 
-          // Calculate batch start date
           const [bYear, bMonth, bDay] = (batch.start_date || "2026-08-01").split("-").map(Number);
           const batchStartObj = new Date(bYear, bMonth - 1, bDay);
           batchStartObj.setHours(0, 0, 0, 0);
 
-          // Calculate customer joining date
           const cStartStr = c.joining_date || (c.created_at ? c.created_at.split("T")[0] : batch.start_date);
           const [jYear, jMonth, jDay] = (cStartStr || "2026-08-01").split("-").map(Number);
           const customerJoinObj = new Date(jYear, jMonth - 1, jDay);
@@ -123,11 +119,8 @@ export function CollectionsHub() {
             advanceBalance = 0;
           }
 
-          // Build cycle installments array dynamically with exact calculated due dates based on interval gap & policy
           const cycleInstallments = Array.from({ length: totalCycles }).map((_, idx) => {
             const cycleNum = idx + 1;
-
-            // Calculate exact cycle due date using base timeline date (batch start vs joining date)
             const freq = batch.frequency_type || "MONTHLY";
             let cycleDueDateObj;
             if (freq === "DAILY") {
@@ -148,10 +141,6 @@ export function CollectionsHub() {
               year: "numeric"
             });
 
-            // Status logic incorporating Option A, B, C:
-            // - Option A: Cycle #1 starts on joining date
-            // - Option B: Past pre-join cycles flagged as PENDING overdue
-            // - Option C: Past pre-join cycles flagged as SKIPPED (₹0)
             let status: "PAID" | "ADVANCE" | "PARTIAL" | "PENDING" | "UPCOMING" | "SKIPPED" = "UPCOMING";
 
             if (cycleNum <= paidCyclesCount) {
@@ -162,9 +151,9 @@ export function CollectionsHub() {
               }
             } else if (isPreJoinCycle) {
               if (policy === "OPTION_C") {
-                status = "SKIPPED"; // Option C: Disallowed past cycle skipped!
+                status = "SKIPPED";
               } else {
-                status = "PENDING"; // Option B: Past dues carried over as pending!
+                status = "PENDING";
               }
             } else if (isCycleInFuture || isFutureStart) {
               status = "UPCOMING";
@@ -202,7 +191,6 @@ export function CollectionsHub() {
         });
         setMemberList(mapped);
 
-        // Keep selected drawer member updated with latest receipts & dues
         if (selected) {
           const updatedSelected = mapped.find(m => m.id === selected.id);
           if (updatedSelected) {
@@ -257,19 +245,16 @@ export function CollectionsHub() {
       if (!matchesFilter || !matchesRoute || !matchesScheme) return false;
       if (!q) return true;
 
-      // Match member name, scheme, route
       const nameMatch = member.name?.toLowerCase().includes(q);
       const schemeMatch = member.scheme?.toLowerCase().includes(q);
       const routeMatch = member.route?.toLowerCase().includes(q);
 
-      // Match member ID No, customer code, database UUID, and phone
       const idMatch = member.id?.toLowerCase().includes(q);
       const dbIdMatch = (member as any).dbId?.toLowerCase().includes(q);
       const codeMatch = (member as any).customerCode?.toLowerCase().includes(q);
       const phoneMatch = (member as any).phone?.toLowerCase().includes(q);
       const idProofMatch = (member as any).idProof?.toLowerCase().includes(q);
 
-      // Numeric digit matching (e.g. typing "1" or "01" matches "MNF-PC-001" or "001")
       const numericQ = q.replace(/[^0-9]/g, "");
       const memberCodeDigits = ((member as any).customerCode || member.id || "").replace(/[^0-9]/g, "");
       const numericMatch =
@@ -367,157 +352,154 @@ export function CollectionsHub() {
   const selectedIndex = selected ? filtered.findIndex((m) => m.id === selected.id) : -1;
 
   return (
-    <div>
-      {/* Top Search & Filter Bar */}
-      <div className="space-y-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full sm:max-w-xs">
-            <svg
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9 3.5a5.5 5.5 0 1 0 3.55 9.7l3.13 3.12a.75.75 0 1 0 1.06-1.06l-3.12-3.13A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z"
-                clipRule="evenodd"
-              />
-            </svg>
+    <div className="space-y-4 w-full max-w-full min-w-0">
+      {/* Unified Compact Toolbar */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-xs dark:border-[#1F2623] dark:bg-[#121614]">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          {/* Search Box */}
+          <div className="relative w-full lg:max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-neutral-400" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search member name, ID, phone, route..."
-              className="w-full min-h-[44px] rounded-xl border border-slate-200/80 bg-white py-2 pl-9 pr-3 text-base sm:text-sm text-slate-800 outline-none ring-teal-500/30 transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 dark:placeholder:text-slate-500"
+              placeholder="Search member, ID, phone, route..."
+              className="w-full min-h-[44px] rounded-xl border border-slate-200/90 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-[#10B981] transition"
             />
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth">
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {filters.map((f) => (
               <button
                 key={f}
                 type="button"
                 onClick={() => setFilter(f)}
-                className={`min-h-[40px] shrink-0 rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer flex items-center justify-center ${
+                className={`min-h-[40px] shrink-0 rounded-xl px-3.5 py-2 text-xs font-semibold transition cursor-pointer flex items-center justify-center ${
                   filter === f
-                    ? "bg-teal-700 text-white shadow-md shadow-teal-700/25 dark:bg-teal-600"
-                    : "border border-slate-200/90 bg-white/70 text-slate-700 hover:border-teal-500/40 hover:text-teal-700 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-300"
+                    ? "bg-emerald-600 text-white font-bold shadow-xs dark:bg-[#10B981] dark:text-black"
+                    : "border border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-neutral-400 dark:hover:text-white"
                 }`}
               >
                 {f}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Route & Scheme Dropdown Selectors */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
-              Route:
-            </span>
-            <select
-              value={selectedRoute}
-              onChange={(e) => setSelectedRoute(e.target.value)}
-              className="min-h-[40px] rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 cursor-pointer"
-            >
-              <option value="ALL">All Routes ({uniqueRoutes.length})</option>
-              {uniqueRoutes.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
+          {/* Route & Scheme Selectors */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+                Route:
+              </span>
+              <select
+                value={selectedRoute}
+                onChange={(e) => setSelectedRoute(e.target.value)}
+                className="min-h-[40px] rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-neutral-200 dark:focus:border-[#10B981] cursor-pointer"
+              >
+                <option value="ALL">All Routes ({uniqueRoutes.length})</option>
+                {uniqueRoutes.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+                Scheme:
+              </span>
+              <select
+                value={selectedScheme}
+                onChange={(e) => setSelectedScheme(e.target.value)}
+                className="min-h-[40px] rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 outline-none focus:border-emerald-500 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-neutral-200 dark:focus:border-[#10B981] cursor-pointer"
+              >
+                <option value="ALL">All Schemes ({uniqueSchemes.length})</option>
+                {uniqueSchemes.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {(selectedRoute !== "ALL" || selectedScheme !== "ALL" || filter !== "All" || query) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRoute("ALL");
+                  setSelectedScheme("ALL");
+                  setFilter("All");
+                  setQuery("");
+                }}
+                className="min-h-[40px] inline-flex items-center gap-1 px-3 text-xs font-medium text-slate-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400 cursor-pointer transition"
+              >
+                <RotateCcw className="h-3 w-3" />
+                <span>Reset</span>
+              </button>
+            )}
           </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
-              Scheme:
-            </span>
-            <select
-              value={selectedScheme}
-              onChange={(e) => setSelectedScheme(e.target.value)}
-              className="min-h-[40px] rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-teal-500 dark:border-[#202425] dark:bg-[#151718] dark:text-slate-200 cursor-pointer"
-            >
-              <option value="ALL">All Schemes ({uniqueSchemes.length})</option>
-              {uniqueSchemes.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {(selectedRoute !== "ALL" || selectedScheme !== "ALL" || filter !== "All" || query) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedRoute("ALL");
-                setSelectedScheme("ALL");
-                setFilter("All");
-                setQuery("");
-              }}
-              className="min-h-[36px] px-2.5 text-xs font-semibold text-rose-600 hover:underline dark:text-rose-400 cursor-pointer"
-            >
-              Reset Filters
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Compact Corporate Route Telemetry Strip */}
-      <div className="mt-4 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs dark:border-[#202425] dark:bg-[#141618]">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-            <h3 className="font-bold text-slate-900 dark:text-white text-xs">
-              {selectedRoute === "ALL" ? "All Routes Active" : `Route: ${selectedRoute}`}
+      {/* Route Telemetry Strip */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-[#1F2623] dark:bg-[#121614]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
+              {selectedRoute === "ALL" ? "All Operating Routes" : `Route: ${selectedRoute}`}
             </h3>
-            <span className="rounded bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-mono tabular-nums text-slate-600 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-neutral-400">
               {routeStats.totalMembers} Accounts
             </span>
           </div>
 
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-slate-400">Due:</span>
-              <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-neutral-400">Due:</span>
+              <span className="font-mono font-semibold tabular-nums text-rose-600 dark:text-rose-400">
                 {formatCurrency(routeStats.totalPendingDues)}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-slate-400">Adv:</span>
-              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-neutral-400">Adv:</span>
+              <span className="font-mono font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
                 +{formatCurrency(routeStats.totalAdvances)}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-slate-400">Rate:</span>
-              <span className="font-mono font-bold text-teal-700 dark:text-teal-400">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-neutral-400">Rate:</span>
+              <span className="font-mono font-semibold tabular-nums text-emerald-600 dark:text-[#10B981]">
                 {routeStats.collectionRate}%
               </span>
             </div>
           </div>
         </div>
 
-        {/* Corporate Micro Progress Bar */}
-        <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+        {/* Linear Progress Bar */}
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 border border-slate-200/80 dark:bg-[#0E1110] dark:border-[#1F2623]">
           <div
-            className="h-full rounded-full bg-teal-600 dark:bg-teal-500 transition-all duration-300"
-            style={{ width: `${routeStats.collectionRate}%` }}
+            className="h-full rounded-full bg-emerald-600 dark:bg-[#10B981] transition-all duration-500"
+            style={{ width: `${Math.min(routeStats.collectionRate, 100)}%` }}
           />
         </div>
       </div>
 
-      {/* MOBILE MEMBER CARDS (High-Density Corporate Layout < md) */}
-      <div className="mt-3.5 space-y-2.5 md:hidden">
+      {/* MOBILE STACKED CARDS (Touch-optimized < md, min 48px tap targets) */}
+      <div className="space-y-3 md:hidden">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonBlock key={i} className="h-24 w-full rounded-xl" />
+            <SkeletonBlock key={i} className="h-28 w-full rounded-2xl bg-white border border-slate-200/80 dark:bg-[#121614] dark:border-[#1F2623]" />
           ))
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-slate-200/80 bg-white p-6 text-center text-xs text-slate-500 dark:border-[#202425] dark:bg-[#141618]">
-            No members match this route or filter.
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-8 text-center dark:border-[#1F2623] dark:bg-[#121614]">
+            <Users className="mx-auto h-8 w-8 text-slate-300 dark:text-neutral-600 mb-2" />
+            <p className="text-sm font-medium text-slate-900 dark:text-white">No members found</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400">
+              No accounts match the current filter or search criteria.
+            </p>
           </div>
         ) : (
           filtered.map((member) => {
@@ -528,84 +510,85 @@ export function CollectionsHub() {
               <div
                 key={member.id}
                 onClick={() => setSelected(member)}
-                className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs transition hover:border-teal-500/40 active:border-teal-500 dark:border-[#202425] dark:bg-[#141618] cursor-pointer"
+                className="rounded-2xl border border-slate-200/80 bg-white p-4 transition hover:border-emerald-500/40 cursor-pointer space-y-3 shadow-xs dark:border-[#1F2623] dark:bg-[#121614] dark:hover:border-[#10B981]/40"
               >
-                {/* Row 1: Avatar + Name & ID + Status Badge */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-700 border border-slate-200 dark:bg-white/10 dark:text-slate-200 dark:border-white/10">
-                      {member.initials}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
-                        {member.name}
-                      </p>
-                      <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">
-                        ID: {(member as any).customerCode || member.id} • {member.route}
-                      </p>
-                    </div>
+                {/* Header: Name, Customer ID & Status Badge */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-slate-900 dark:text-white text-sm truncate">
+                      {member.name}
+                    </h4>
+                    <p className="text-xs font-mono text-slate-500 dark:text-neutral-400 tabular-nums truncate">
+                      ID: {(member as any).customerCode || member.id} · {member.route}
+                    </p>
                   </div>
 
                   <div className="shrink-0 text-right">
                     {member.totalPendingDues > 0 ? (
-                      <span className="inline-block rounded-md bg-rose-50 border border-rose-200/70 px-2 py-0.5 text-xs font-bold text-rose-700 dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-300">
+                      <span className="inline-flex items-center rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-xs font-semibold tabular-nums text-rose-600 dark:text-rose-400">
                         {formatCurrency(member.totalPendingDues)} Due
                       </span>
                     ) : member.advanceBalance > 0 ? (
-                      <span className="inline-block rounded-md bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-900/50 dark:text-emerald-300">
+                      <span className="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
                         +{formatCurrency(member.advanceBalance)} Adv
                       </span>
                     ) : (
-                      <span className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-400">
+                      <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-neutral-400">
                         Settled
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Row 2: Scheme Tag + Direct Action Buttons */}
-                <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-slate-100 pt-2 dark:border-[#1d2022]">
-                  <span className="truncate rounded bg-slate-100 dark:bg-white/5 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400 max-w-[130px]">
+                {/* Scheme Tag */}
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500 dark:text-neutral-400 truncate max-w-[200px]">
                     {member.scheme}
                   </span>
+                  <span className="text-slate-500 dark:text-neutral-400 font-mono tabular-nums">
+                    ₹{Number((member as any).installmentAmount || 0).toLocaleString("en-IN")}/cycle
+                  </span>
+                </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {member.totalPendingDues > 0 ? (
-                      <button
-                        type="button"
-                        disabled={isPaying}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQuickPay(member, cycleDueAmt);
-                        }}
-                        className="h-9 px-3 flex items-center justify-center gap-1 rounded-lg bg-emerald-600 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 disabled:opacity-50 cursor-pointer transition active:scale-95"
-                      >
-                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                          <path d="M11.983 1.59a.75.75 0 00-1.292-.614l-6.5 9.25a.75.75 0 00.615 1.182h4.526l-1.315 7.001a.75.75 0 001.292.614l6.5-9.25a.75.75 0 00-.615-1.182h-4.526l1.315-7.001z" />
-                        </svg>
-                        <span>{isPaying ? "Saving..." : `Pay ${formatCurrency(cycleDueAmt)}`}</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelected(member);
-                        }}
-                        className="h-9 px-2.5 flex items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-700 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 cursor-pointer"
-                      >
-                        Passbook
-                      </button>
-                    )}
-
+                {/* Action Row with min 48px touch targets */}
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-[#1F2623]">
+                  {member.totalPendingDues > 0 ? (
                     <button
                       type="button"
-                      onClick={() => setSelected(member)}
-                      className="h-9 px-2.5 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#25282c] dark:bg-[#191b1d] dark:text-slate-300 cursor-pointer"
+                      disabled={isPaying}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleQuickPay(member, cycleDueAmt);
+                      }}
+                      className="min-h-[48px] rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-3 text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-500 dark:hover:bg-[#0EA57E] active:scale-98 transition disabled:opacity-50 cursor-pointer shadow-xs"
                     >
-                      Ledger →
+                      <Zap className="h-4 w-4" />
+                      <span>{isPaying ? "Recording..." : `Collect ${formatCurrency(cycleDueAmt)}`}</span>
                     </button>
-                  </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelected(member);
+                      }}
+                      className="min-h-[48px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center justify-center gap-1.5 hover:bg-emerald-500/20 active:scale-98 transition cursor-pointer"
+                    >
+                      <span>Collect Advance</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(member);
+                    }}
+                    className="min-h-[48px] rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-neutral-200 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-white/[0.04] active:scale-98 transition cursor-pointer"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span>View Ledger</span>
+                  </button>
                 </div>
               </div>
             );
@@ -613,29 +596,39 @@ export function CollectionsHub() {
         )}
       </div>
 
-      {/* DESKTOP / TABLET TABLE (Visible md and above) */}
-      <div className="mt-5 hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm md:block dark:border-[#202425] dark:bg-[#151718]/70">
+      {/* DESKTOP TABLE (>= md) */}
+      <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-[#1F2623] dark:bg-[#121614]">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50/80 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
+            <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200/80 dark:bg-[#0E1110] dark:text-neutral-400 dark:border-[#1F2623]">
               <tr>
-                <th className="px-5 py-3 font-semibold">Member</th>
-                <th className="px-5 py-3 font-semibold">Scheme</th>
-                <th className="px-5 py-3 font-semibold">Route</th>
-                <th className="px-5 py-3 font-semibold">Pending Dues</th>
-                <th className="px-5 py-3 font-semibold">Advance</th>
-                <th className="px-5 py-3 text-right font-semibold">Quick Action</th>
+                <th className="px-5 py-3.5 font-medium">Member</th>
+                <th className="px-5 py-3.5 font-medium">Scheme</th>
+                <th className="px-5 py-3.5 font-medium">Route</th>
+                <th className="px-5 py-3.5 font-medium text-right">Pending Dues</th>
+                <th className="px-5 py-3.5 font-medium text-right">Advance Balance</th>
+                <th className="px-5 py-3.5 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100 dark:divide-[#1F2623]">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-t border-slate-200/70 dark:border-[#202425]">
+                  <tr key={i}>
                     <td colSpan={6} className="px-5 py-4">
-                      <SkeletonBlock className="h-7 w-full rounded-lg" />
+                      <SkeletonBlock className="h-7 w-full rounded-lg bg-slate-100 dark:bg-[#0E1110]" />
                     </td>
                   </tr>
                 ))
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center">
+                    <Users className="mx-auto h-8 w-8 text-slate-300 dark:text-neutral-600 mb-2" />
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">No members match this route or filter</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400">
+                      Try resetting your filter parameters or search term.
+                    </p>
+                  </td>
+                </tr>
               ) : (
                 filtered.map((member) => {
                   const cycleDueAmt = (member as any).installmentAmount || member.totalPendingDues || 500;
@@ -645,45 +638,45 @@ export function CollectionsHub() {
                     <tr
                       key={member.id}
                       onClick={() => setSelected(member)}
-                      className="border-t border-slate-200/70 transition hover:bg-slate-50/80 dark:border-[#202425] dark:hover:bg-white/[0.02] cursor-pointer"
+                      className="transition hover:bg-slate-50/60 dark:hover:bg-white/[0.02] cursor-pointer"
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-700 text-[11px] font-bold text-white">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-emerald-700 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-[#10B981]">
                             {member.initials}
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900 dark:text-slate-100">
+                            <p className="font-semibold text-slate-900 dark:text-white">
                               {member.name}
                             </p>
-                            <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                            <p className="text-xs font-mono text-slate-500 dark:text-neutral-400 tabular-nums">
                               ID: {(member as any).customerCode || member.id}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-slate-700 dark:text-slate-300">
+                      <td className="px-5 py-3.5 text-slate-700 dark:text-neutral-300">
                         {member.scheme}
                       </td>
-                      <td className="px-5 py-3.5 text-slate-700 dark:text-slate-300">
+                      <td className="px-5 py-3.5 text-slate-700 dark:text-neutral-300">
                         {member.route}
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 text-right font-mono font-semibold tabular-nums">
                         {member.totalPendingDues > 0 ? (
-                          <span className="font-extrabold text-rose-600 dark:text-rose-400">
+                          <span className="text-rose-600 dark:text-rose-400">
                             {formatCurrency(member.totalPendingDues)}
                           </span>
                         ) : (
-                          <span className="text-slate-400 dark:text-slate-500">—</span>
+                          <span className="text-slate-400 dark:text-neutral-500">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 text-right font-mono font-semibold tabular-nums">
                         {member.advanceBalance > 0 ? (
-                          <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                          <span className="text-emerald-600 dark:text-emerald-400">
                             +{formatCurrency(member.advanceBalance)}
                           </span>
                         ) : (
-                          <span className="text-slate-400 dark:text-slate-500">—</span>
+                          <span className="text-slate-400 dark:text-neutral-500">—</span>
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-right">
@@ -696,37 +689,34 @@ export function CollectionsHub() {
                                 e.stopPropagation();
                                 handleQuickPay(member, cycleDueAmt);
                               }}
-                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+                              className="rounded-lg bg-emerald-600 text-white dark:bg-[#10B981] dark:text-black px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-emerald-500 dark:hover:bg-[#0EA57E] disabled:opacity-50 cursor-pointer transition"
                             >
                               {isPaying ? "Saving..." : `Collect ${formatCurrency(cycleDueAmt)}`}
                             </button>
                           )}
-                          <span className="font-semibold text-teal-600 dark:text-teal-400 text-xs">
-                            Ledger
-                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelected(member);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-[#1F2623] dark:bg-[#0E1110] px-3 py-1.5 text-xs font-medium dark:text-neutral-200 dark:hover:bg-white/[0.04] transition cursor-pointer"
+                          >
+                            <span>Ledger</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </button>
                         </div>
                       </td>
                     </tr>
                   );
                 })
               )}
-
-              {!loading && filtered.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-5 py-10 text-center text-sm text-slate-500 dark:text-slate-400"
-                  >
-                    No members match this route or filter.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Member Ledger & Installment Drawer with Sequential Route Navigation */}
+      {/* Member Ledger & Installment Drawer */}
       <MemberDrawer
         member={selected}
         onClose={() => setSelected(null)}
@@ -750,7 +740,7 @@ export function CollectionsHub() {
         }}
       />
 
-      {/* Instant Digital WhatsApp & Print Receipt Modal */}
+      {/* Digital WhatsApp & Print Receipt Modal */}
       <ReceiptModal
         receipt={recordedReceipt}
         onClose={() => setRecordedReceipt(null)}

@@ -63,13 +63,13 @@ export default function BranchesPage() {
   }, []);
 
   return (
-    <div>
+    <div className="w-full max-w-full min-w-0 overflow-x-hidden">
       <DashboardTopbar
         title="Branch Tenants"
         description="Multi-region branch tenant management and regional telemetry"
       />
 
-      <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="w-full max-w-full min-w-0 space-y-6 px-4 py-6 sm:px-6 lg:px-8 overflow-x-hidden">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white">

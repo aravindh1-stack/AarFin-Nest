@@ -25,13 +25,13 @@ export default function AuditPage() {
   }, []);
 
   return (
-    <div>
+    <div className="w-full max-w-full min-w-0 overflow-x-hidden">
       <DashboardTopbar
         title="Audit Logs"
         description="Immutable system transaction logs and security tracking"
       />
 
-      <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="w-full max-w-full min-w-0 space-y-6 px-4 py-6 sm:px-6 lg:px-8 overflow-x-hidden">
         <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm dark:border-[#202425] dark:bg-[#151718]/70">
           <div className="flex items-center justify-between border-b border-slate-200/70 p-4 dark:border-[#202425]">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">

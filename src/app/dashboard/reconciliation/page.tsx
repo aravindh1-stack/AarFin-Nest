@@ -93,13 +93,13 @@ export default function EODReconciliationPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="w-full max-w-full min-w-0 overflow-x-hidden">
       <DashboardTopbar
         title="End-of-Day (EOD) Cash Reconciliation"
         description="Verify physical cash handover from field collection officers against system-logged digital receipts"
       />
 
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      <div className="w-full max-w-full min-w-0 px-4 py-6 sm:px-6 lg:px-8 space-y-6 overflow-x-hidden">
         
         {/* Top Summary Banner */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

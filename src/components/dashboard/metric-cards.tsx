@@ -2,34 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SkeletonBlock } from "@/components/skeleton-block";
-import { Layers, Users, Receipt, MapPin, TrendingUp, Minus } from "lucide-react";
-
-function Sparkline({ points }: { points: number[] }) {
-  const max = Math.max(...points);
-  const min = Math.min(...points);
-  const range = max - min || 1;
-  const coords = points
-    .map((p, i) => {
-      const x = (i / (points.length - 1)) * 100;
-      const y = 100 - ((p - min) / range) * 100;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  return (
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-8 w-20">
-      <polyline
-        points={coords}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
-}
+import { Layers, Users, Receipt, MapPin, Activity } from "lucide-react";
 
 export function MetricCards() {
   const [batchesCount, setBatchesCount] = useState<number | string>("...");
@@ -69,9 +42,9 @@ export function MetricCards() {
 
   if (loading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonBlock key={i} className="h-32 w-full rounded-2xl" />
+          <SkeletonBlock key={i} className="h-32 w-full rounded-2xl bg-white border border-slate-200/80 dark:bg-[#121614] dark:border-[#1F2623]" />
         ))}
       </div>
     );
@@ -81,75 +54,57 @@ export function MetricCards() {
     {
       label: "Active Schemes & Batches",
       value: String(batchesCount),
-      delta: "Live Ledger Sync",
-      trend: "up" as const,
+      status: "Live Ledger Sync",
       icon: Layers,
-      sparkline: [4, 6, 5, 8, 7, 10, 9, 12],
     },
     {
       label: "Registered Members",
       value: String(customersCount),
-      delta: "Active Portfolio",
-      trend: "up" as const,
+      status: "Active Portfolio",
       icon: Users,
-      sparkline: [3, 5, 4, 6, 8, 7, 9, 11],
     },
     {
-      label: "Total Realized Collections",
+      label: "Realized Collections",
       value: totalCollections,
-      delta: "Atomic FIFO Ledger",
-      trend: "up" as const,
+      status: "Atomic FIFO Ledger",
       icon: Receipt,
-      sparkline: [8, 8, 9, 9, 8, 10, 9, 10],
     },
     {
       label: "Operating Route Beats",
       value: String(groupsCount),
-      delta: "Regional Allocation",
-      trend: "flat" as const,
+      status: "Regional Allocation",
       icon: MapPin,
-      sparkline: [2, 2, 3, 3, 3, 4, 4, 4],
     },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
       {metrics.map((metric) => {
         const IconComp = metric.icon;
         return (
           <div
             key={metric.label}
-            className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 transition hover:border-teal-500/30 hover:shadow-lg hover:shadow-teal-500/5 dark:border-[#202425] dark:bg-[#151718]/70 dark:hover:border-teal-500/30"
+            className="rounded-2xl border border-slate-200/80 bg-white p-5 transition hover:border-emerald-500/40 hover:shadow-md dark:border-[#1F2623] dark:bg-[#121614] dark:hover:border-[#10B981]/30 dark:hover:shadow-lg dark:hover:shadow-black/40 min-w-0"
           >
-            <div className="flex items-start justify-between">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+                {metric.label}
+              </span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-emerald-600 dark:border-[#1F2623] dark:bg-[#0E1110] dark:text-[#10B981]">
                 <IconComp className="h-4 w-4" />
-              </div>
-              <div className="text-teal-500/70 dark:text-teal-400/60">
-                <Sparkline points={metric.sparkline} />
               </div>
             </div>
 
-            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-              {metric.label}
-            </p>
-            <p className="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white">
+            <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white tabular-nums">
               {metric.value}
             </p>
-            <p
-              className={`mt-1.5 inline-flex items-center gap-1 text-xs font-semibold ${
-                metric.trend === "up"
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              {metric.trend === "up" ? (
-                <TrendingUp className="h-3 w-3" />
-              ) : (
-                <Minus className="h-3 w-3" />
-              )}
-              <span>{metric.delta}</span>
-            </p>
+
+            <div className="mt-3 flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                <Activity className="h-3 w-3" />
+                {metric.status}
+              </span>
+            </div>
           </div>
         );
       })}

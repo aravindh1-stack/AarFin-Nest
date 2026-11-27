@@ -5,35 +5,40 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  --card: rgba(255, 255, 255, 0.9);
-  --accent: #0f766e;
+  --card: #ffffff;
+  --accent: #059669;
 
-  /* Design Tokens for Light Mode (High Contrast & Sunlight Friendly) */
+  /* Design Tokens for Light Mode */
   --bg-main: #F8FAFC;
   --card-bg: #FFFFFF;
   --card-hover: #F1F5F9;
   --text-main: #0F172A;
-  --text-muted: #475569;
+  --text-muted: #64748B;
   --border-color: #E2E8F0;
   --input-bg: #FFFFFF;
-  --brand-primary: #0F766E;
+  --brand-primary: #059669;
+  --surface-topbar: #FFFFFF;
+  --surface-sidebar: #FFFFFF;
 }
 
 .dark {
-  --background: #0C0D0E;
+  /* High-End Pitch-Black FinTech Theme (Linear & Stripe aesthetic) */
+  --background: #090B0A;
   --foreground: #ECEDEE;
-  --card: rgba(21, 23, 24, 0.85);
-  --accent: #14b8a6;
+  --card: #121614;
+  --accent: #10B981;
 
   /* Design Tokens for Dark Mode */
-  --bg-main: #0C0D0E;
-  --card-bg: #151718;
-  --card-hover: #1E2022;
+  --bg-main: #090B0A;
+  --card-bg: #121614;
+  --card-hover: #171C1A;
   --text-main: #ECEDEE;
-  --text-muted: #94A3B8;
-  --border-color: #202425;
-  --input-bg: #121314;
-  --brand-primary: #14B8A6;
+  --text-muted: #8E9B94;
+  --border-color: #1F2623;
+  --input-bg: #0E1110;
+  --brand-primary: #10B981;
+  --surface-topbar: #0E1110;
+  --surface-sidebar: #0E1110;
 }
 
 @theme inline {
@@ -73,14 +78,14 @@ body {
   bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Minimum accessible touch targets (44px) */
+/* Minimum accessible touch targets (44px/48px) */
 .touch-target {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 48px;
+  min-width: 48px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Urbanist', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 700;
 }
 
@@ -133,14 +138,14 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--brand-primary);
+  background: var(--border-color);
   border-radius: 3px;
 }
 
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
+  display: none !important;
 }
 .no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }

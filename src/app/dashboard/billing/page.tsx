@@ -81,13 +81,13 @@ export default function BillingPage() {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="w-full max-w-full min-w-0 overflow-x-hidden">
       <DashboardTopbar
         title="SaaS Subscription & Organization Billing"
         description="Manage plan tiers, active field agent seats, usage meters, and billing invoices"
       />
 
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-8">
+      <div className="w-full max-w-full min-w-0 px-4 py-6 sm:px-6 lg:px-8 space-y-8 overflow-x-hidden">
         
         {/* Top Notification Toast */}
         {upgradeSuccess && (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { SkeletonBlock } from "@/components/skeleton-block";
+import { Printer } from "lucide-react";
 
 export default function ReportsPage() {
   const [payments, setPayments] = useState<any[]>([]);
@@ -31,13 +32,13 @@ export default function ReportsPage() {
   );
 
   return (
-    <div>
+    <div className="w-full max-w-full min-w-0 overflow-x-hidden">
       <DashboardTopbar
         title="Reports & Financial Analytics"
         description="PDF export studio, ledger breakdown, and date-range telemetry"
       />
 
-      <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="w-full max-w-full min-w-0 space-y-6 px-4 py-6 sm:px-6 lg:px-8 overflow-x-hidden">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
@@ -50,9 +51,10 @@ export default function ReportsPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-500 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl bg-[#10B981] px-4 py-2 text-xs font-bold text-black shadow-xs transition hover:bg-[#0EA57E] cursor-pointer"
           >
-            🖨 Print / Export PDF
+            <Printer className="h-4 w-4" />
+            <span>Print / Export PDF</span>
           </button>
         </div>
 

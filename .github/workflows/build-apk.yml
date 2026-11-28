@@ -47,7 +47,15 @@ jobs:
       - name: Build Debug APK (For Testing on Phone)
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../gradle.log
+
+      - name: Upload Gradle Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle.log
+          if-no-files-found: ignore
 
       - name: Build Release Bundle (For Google Play Store)
         run: |
@@ -55,6 +63,7 @@ jobs:
           ./gradlew bundleRelease --no-daemon --stacktrace || true
 
       - name: Upload Debug APK Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: nexfix-debug-apk
@@ -62,6 +71,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Play Store AAB Bundle
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: nexfix-playstore-aab

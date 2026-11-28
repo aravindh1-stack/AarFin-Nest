@@ -33,7 +33,26 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [3/3] Compiling Android APK with Gradle...
+echo [3/3] Checking Android SDK environment...
+set ANDROID_SDK_PATH=%LOCALAPPDATA%\Android\Sdk
+if not exist "%ANDROID_SDK_PATH%" (
+    echo.
+    echo -----------------------------------------------------------------
+    echo [NOTICE] Android SDK not detected at:
+    echo   %ANDROID_SDK_PATH%
+    echo.
+    echo To build locally on your PC, install Android Studio:
+    echo   https://developer.android.com/studio
+    echo.
+    echo Alternatively, download the pre-built APK from your GitHub Actions:
+    echo   https://github.com/aravindh1-stack/AarFin-Nest/actions
+    echo -----------------------------------------------------------------
+    echo.
+    pause
+    exit /b 0
+)
+
+echo Compiling Android APK with Gradle...
 cd android
 call gradlew.bat assembleDebug
 if %errorlevel% neq 0 (

@@ -1,0 +1,13 @@
+{
+  "appId": "org.aarga.nexfix",
+  "appName": "NexFix Financial OS",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://aarfin-nest.vercel.app",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

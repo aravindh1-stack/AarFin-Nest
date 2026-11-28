@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/backend/config/supabaseAdmin';
-import { assertNotViewer, getSessionUser } from '@/lib/auth/api-guard';
+import { requirePermission, getSessionUser } from '@/lib/auth/api-guard';
 
 export async function POST(request: Request) {
-  // Enforce read-only locks for VIEWER
-  const forbidden = assertNotViewer(request);
+  // Enforce role permissions: SUPER_ADMIN & ADMIN allowed; EDITOR & VIEWER denied
+  const forbidden = requirePermission(request, 'canReconcileCash');
   if (forbidden) return forbidden;
 
   try {

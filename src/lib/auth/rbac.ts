@@ -65,23 +65,27 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   allowedPrefixes: string[];
   canManageTeam: boolean;
   canManageSchemes: boolean;
+  canManageRoutes: boolean;
   canManageBranches: boolean;
   canManageBilling: boolean;
   canReconcileCash: boolean;
   canViewReports: boolean;
   canViewAudit: boolean;
   canRecordPayments: boolean;
+  canVoidPayments: boolean;
 }> = {
   SUPER_ADMIN: {
     allowedPrefixes: ["/dashboard"],
     canManageTeam: true,
     canManageSchemes: true,
+    canManageRoutes: true,
     canManageBranches: true,
     canManageBilling: true,
     canReconcileCash: true,
     canViewReports: true,
     canViewAudit: true,
     canRecordPayments: true,
+    canVoidPayments: true,
   },
   ADMIN: {
     allowedPrefixes: [
@@ -96,12 +100,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     ],
     canManageTeam: false, // Read-only team visibility
     canManageSchemes: true,
+    canManageRoutes: true,
     canManageBranches: false,
     canManageBilling: false,
     canReconcileCash: true,
     canViewReports: true,
     canViewAudit: true,
     canRecordPayments: true,
+    canVoidPayments: true,
   },
   EDITOR: {
     allowedPrefixes: [
@@ -111,12 +117,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     ],
     canManageTeam: false,
     canManageSchemes: false,
+    canManageRoutes: false,
     canManageBranches: false,
     canManageBilling: false,
     canReconcileCash: false,
     canViewReports: false,
     canViewAudit: false,
     canRecordPayments: true,
+    canVoidPayments: false,
   },
   VIEWER: {
     allowedPrefixes: [
@@ -128,14 +136,65 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     ],
     canManageTeam: false,
     canManageSchemes: false,
+    canManageRoutes: false,
     canManageBranches: false,
     canManageBilling: false,
     canReconcileCash: false,
     canViewReports: false,
     canViewAudit: false,
     canRecordPayments: false, // Read-only
+    canVoidPayments: false,
   },
 };
+
+export type RolePermissionKey = keyof typeof ROLE_PERMISSIONS['SUPER_ADMIN'];
+
+/**
+ * Checks whether a role has a given permission
+ */
+export function hasPermission(role: UserRole, permission: RolePermissionKey): boolean {
+  if (role === "SUPER_ADMIN") return true;
+  return Boolean(ROLE_PERMISSIONS[role]?.[permission]);
+}
+
+/**
+ * Returns contextual tooltip message when an action is disabled for a role
+ */
+export function getActionRestrictionTooltip(
+  role: UserRole,
+  action: "manage_schemes" | "manage_routes" | "reconcile_cash" | "record_payment" | "void_payment" | "manage_team"
+): string | null {
+  if (role === "SUPER_ADMIN") return null;
+
+  if (role === "VIEWER") {
+    return "Read-only access: Mutations restricted";
+  }
+
+  if (role === "EDITOR") {
+    switch (action) {
+      case "manage_schemes":
+        return "Field Desk accounts cannot create or modify schemes (Operations Lead required)";
+      case "manage_routes":
+        return "Field Desk accounts cannot configure route beats (Operations Lead required)";
+      case "reconcile_cash":
+        return "Cashier / Operations Lead authorization required for EOD reconciliation";
+      case "void_payment":
+        return "Supervisor / Admin authorization required to void transactions";
+      case "manage_team":
+        return "Only Root Owner can invite or manage staff members";
+      default:
+        return null;
+    }
+  }
+
+  if (role === "ADMIN") {
+    if (action === "manage_team") {
+      return "Operations Leads have read-only staff access (Root Owner required to invite or modify)";
+    }
+  }
+
+  return null;
+}
 
 /**
  * Checks whether a given role can access a pathname

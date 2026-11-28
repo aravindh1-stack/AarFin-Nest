@@ -26,6 +26,7 @@ import {
   Sun,
   LogOut,
   UserCheck,
+  Smartphone,
 } from "lucide-react";
 
 interface MobileNavContextType {
@@ -219,8 +220,22 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
-          {/* Drawer Footer with Theme Toggle & Profile */}
-          <div className="border-t border-slate-200/80 p-4 dark:border-[#1F2623] space-y-3 shrink-0">
+          {/* Drawer Footer with Install App, Theme Toggle & Profile */}
+          <div className="border-t border-slate-200/80 p-4 dark:border-[#1F2623] space-y-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("nexfix:open-install-prompt"));
+                }
+                setIsMobileDrawerOpen(false);
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 transition hover:bg-emerald-500/20 active:scale-98 cursor-pointer"
+            >
+              <Smartphone className="h-3.5 w-3.5" />
+              <span>Install Mobile App (PWA)</span>
+            </button>
+
             <button
               type="button"
               onClick={toggleTheme}

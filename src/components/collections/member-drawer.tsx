@@ -5,6 +5,7 @@ import { StatusPill } from "@/components/status-pill";
 import type { Member } from "@/lib/mock-members";
 import { BrandLogo } from "@/components/brand-logo";
 import { useAuth } from "@/components/auth/auth-context";
+import { hasPermission, getActionRestrictionTooltip } from "@/lib/auth/rbac";
 import { type ReceiptData, generateWhatsAppUrl } from "@/components/collections/receipt-modal";
 import { ChevronLeft, ChevronRight, X, ShieldAlert, AlertTriangle } from "lucide-react";
 
@@ -32,8 +33,10 @@ export function MemberDrawer({
   onReceiptGenerated?: (receipt: ReceiptData) => void;
 }) {
   const { role } = useAuth();
-  const isReadOnlyViewer = role === "VIEWER";
-  const READ_ONLY_TOOLTIP = "Read-only access: Mutations restricted";
+  const canRecordPayments = hasPermission(role, "canRecordPayments");
+  const canVoidPayments = hasPermission(role, "canVoidPayments");
+  const recordTooltip = getActionRestrictionTooltip(role, "record_payment") || "Mutations restricted";
+  const voidTooltip = getActionRestrictionTooltip(role, "void_payment") || "Supervisor authorization required";
 
   const [activeTab, setActiveTab] = useState<"pay" | "schedule" | "receipts" | "profile">("schedule");
   const [amount, setAmount] = useState("");
@@ -52,7 +55,7 @@ export function MemberDrawer({
   );
 
   const handleApplyPayment = async (overrideAmount?: number) => {
-    if (isReadOnlyViewer) return;
+    if (!canRecordPayments) return;
     const payAmt = overrideAmount !== undefined ? overrideAmount : Number(amount);
     if (!member || !payAmt || payAmt <= 0) return;
     setSubmitting(true);
@@ -243,11 +246,11 @@ export function MemberDrawer({
                     type="number"
                     inputMode="decimal"
                     value={amount}
-                    disabled={isReadOnlyViewer}
+                    disabled={!canRecordPayments}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder={isReadOnlyViewer ? "Audit Read-Only" : String(cycleAmount)}
+                    placeholder={!canRecordPayments ? "Audit Read-Only" : String(cycleAmount)}
                     className={`w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-7 pr-3 text-base sm:text-sm font-bold text-slate-900 outline-none ring-teal-500/30 focus:border-teal-500 focus:ring-4 dark:border-[#202425] dark:bg-[#0C0D0E] dark:text-white ${
-                      isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : ""
+                      !canRecordPayments ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   />
                 </div>
@@ -255,10 +258,10 @@ export function MemberDrawer({
                 <button
                   type="button"
                   onClick={() => handleApplyPayment()}
-                  disabled={isReadOnlyViewer || submitting || (!amount && member.totalPendingDues <= 0)}
-                  title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                  disabled={!canRecordPayments || submitting || (!amount && member.totalPendingDues <= 0)}
+                  title={!canRecordPayments ? recordTooltip : undefined}
                   className={`h-11 px-5 rounded-xl bg-teal-700 text-xs font-bold text-white shadow-md hover:bg-teal-600 disabled:opacity-50 flex items-center justify-center shrink-0 dark:bg-teal-600 dark:hover:bg-teal-500 ${
-                    isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                    !canRecordPayments ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                   }`}
                 >
                   {submitting ? "Saving..." : "Record Payment"}
@@ -271,10 +274,10 @@ export function MemberDrawer({
                   <button
                     type="button"
                     onClick={() => handleApplyPayment(member.totalPendingDues)}
-                    disabled={isReadOnlyViewer || submitting}
-                    title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                    disabled={!canRecordPayments || submitting}
+                    title={!canRecordPayments ? recordTooltip : undefined}
                     className={`h-8 shrink-0 rounded-lg bg-rose-50 border border-rose-200 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:border-rose-800/40 dark:text-rose-300 ${
-                      isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                      !canRecordPayments ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                     }`}
                   >
                     Clear Full Dues ({formatCurrency(member.totalPendingDues)})
@@ -284,10 +287,10 @@ export function MemberDrawer({
                 <button
                   type="button"
                   onClick={() => setAmount(String(cycleAmount))}
-                  disabled={isReadOnlyViewer}
-                  title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                  disabled={!canRecordPayments}
+                  title={!canRecordPayments ? recordTooltip : undefined}
                   className={`h-8 shrink-0 rounded-lg border border-teal-500/30 bg-teal-500/10 px-2.5 text-xs font-bold text-teal-700 hover:bg-teal-500/20 dark:text-teal-300 ${
-                    isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                    !canRecordPayments ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                   }`}
                 >
                   1 Cycle ({formatCurrency(cycleAmount)})
@@ -298,10 +301,10 @@ export function MemberDrawer({
                     key={preset}
                     type="button"
                     onClick={() => setAmount(String(preset))}
-                    disabled={isReadOnlyViewer}
-                    title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                    disabled={!canRecordPayments}
+                    title={!canRecordPayments ? recordTooltip : undefined}
                     className={`h-8 shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 hover:border-slate-300 dark:border-[#202425] dark:bg-white/5 dark:text-slate-300 ${
-                      isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                      !canRecordPayments ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                     }`}
                   >
                     {formatCurrency(preset)}
@@ -313,10 +316,10 @@ export function MemberDrawer({
               <div className="mt-3 flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-[#202425]">
                 <button
                   type="button"
-                  disabled={isReadOnlyViewer}
-                  title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : "Apply overdue cycle penalty fee"}
+                  disabled={!canVoidPayments}
+                  title={!canVoidPayments ? voidTooltip : "Apply overdue cycle penalty fee"}
                   className={`flex-1 h-8 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center justify-center gap-1 transition ${
-                    isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "hover:bg-amber-500/20 cursor-pointer"
+                    !canVoidPayments ? "opacity-50 cursor-not-allowed" : "hover:bg-amber-500/20 cursor-pointer"
                   }`}
                 >
                   <AlertTriangle className="h-3 w-3" />
@@ -325,10 +328,10 @@ export function MemberDrawer({
 
                 <button
                   type="button"
-                  disabled={isReadOnlyViewer}
-                  title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : "Void last recorded collection transaction"}
+                  disabled={!canVoidPayments}
+                  title={!canVoidPayments ? voidTooltip : "Void last recorded collection transaction"}
                   className={`flex-1 h-8 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 text-[11px] font-semibold text-rose-700 dark:text-rose-400 flex items-center justify-center gap-1 transition ${
-                    isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "hover:bg-rose-500/20 cursor-pointer"
+                    !canVoidPayments ? "opacity-50 cursor-not-allowed" : "hover:bg-rose-500/20 cursor-pointer"
                   }`}
                 >
                   <ShieldAlert className="h-3 w-3" />

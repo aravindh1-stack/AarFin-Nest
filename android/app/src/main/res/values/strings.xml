@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NexFix Financial OS</string>
+    <string name="title_activity_main">NexFix Financial OS</string>
+    <string name="package_name">org.aarga.nexfix</string>
+    <string name="custom_url_scheme">org.aarga.nexfix</string>
+</resources>

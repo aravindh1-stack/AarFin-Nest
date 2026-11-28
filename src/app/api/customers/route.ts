@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CustomersBackendService } from '@/backend/services/dbService';
+import { assertNotViewer } from '@/lib/auth/api-guard';
 
 export async function GET() {
   try {
@@ -11,6 +12,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // Enforce read-only lock for VIEWER
+  const forbidden = assertNotViewer(request);
+  if (forbidden) return forbidden;
+
   try {
     const body = await request.json();
     const newCustomer = await CustomersBackendService.createCustomer(body);
@@ -21,6 +26,10 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  // Enforce read-only lock for VIEWER
+  const forbidden = assertNotViewer(request);
+  if (forbidden) return forbidden;
+
   try {
     const body = await request.json();
     const { id, ...updateData } = body;

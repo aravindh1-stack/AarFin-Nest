@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { useAuth } from "@/components/auth/auth-context";
+import { hasPermission, getActionRestrictionTooltip } from "@/lib/auth/rbac";
 import {
   ShieldCheck,
   AlertCircle,
@@ -61,7 +62,8 @@ const mockRoutes: RouteReconciliation[] = [
 export default function EODReconciliationPage() {
   const { role } = useAuth();
   const isReadOnlyViewer = role === "VIEWER";
-  const READ_ONLY_TOOLTIP = "Read-only access: Mutations restricted";
+  const canReconcileCash = hasPermission(role, "canReconcileCash");
+  const restrictionTooltip = getActionRestrictionTooltip(role, "reconcile_cash") || "Mutations restricted";
 
   const [selectedRouteId, setSelectedRouteId] = useState<string>("route-01");
   const [denominations, setDenominations] = useState<{ [key: number]: number }>({
@@ -77,12 +79,12 @@ export default function EODReconciliationPage() {
   const [isSignedOff, setIsSignedOff] = useState(false);
 
   const handleSignOff = () => {
-    if (isReadOnlyViewer) return;
+    if (!canReconcileCash) return;
     setIsSignedOff(true);
   };
 
   const handleLockLedger = async () => {
-    if (isReadOnlyViewer) return;
+    if (!canReconcileCash) return;
     setIsLocked(true);
     try {
       await fetch("/api/eod/lock", {
@@ -328,11 +330,11 @@ export default function EODReconciliationPage() {
                 {/* Cashier Tally Sign-Off */}
                 <button
                   type="button"
-                  disabled={isReadOnlyViewer || isSignedOff || isLocked}
-                  title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                  disabled={!canReconcileCash || isSignedOff || isLocked}
+                  title={!canReconcileCash ? restrictionTooltip : undefined}
                   onClick={handleSignOff}
                   className={`w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold border transition shadow-xs ${
-                    isReadOnlyViewer
+                    !canReconcileCash
                       ? "border-slate-300 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600 opacity-50 cursor-not-allowed"
                       : isSignedOff
                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 cursor-default"
@@ -341,7 +343,7 @@ export default function EODReconciliationPage() {
                 >
                   <FileCheck2 className="h-4 w-4" />
                   <span>
-                    {isReadOnlyViewer
+                    {!canReconcileCash
                       ? "Cashier Tally Sign-Off (Restricted)"
                       : isSignedOff
                       ? "Cashier Tally Signed Off ✓"
@@ -352,11 +354,11 @@ export default function EODReconciliationPage() {
                 {/* Lock Day Ledger Button */}
                 <button
                   type="button"
-                  disabled={isReadOnlyViewer || isLocked}
-                  title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                  disabled={!canReconcileCash || isLocked}
+                  title={!canReconcileCash ? restrictionTooltip : undefined}
                   onClick={handleLockLedger}
                   className={`w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold transition shadow-xs ${
-                    isReadOnlyViewer
+                    !canReconcileCash
                       ? "bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-600 opacity-50 cursor-not-allowed"
                       : isLocked
                       ? "bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
@@ -371,7 +373,7 @@ export default function EODReconciliationPage() {
                   ) : (
                     <>
                       <Lock className="h-4 w-4" />
-                      <span>{isReadOnlyViewer ? "Lock Day Ledger (Restricted)" : "Lock Day Ledger & Issue Bank Deposit Slip"}</span>
+                      <span>{!canReconcileCash ? "Lock Day Ledger (Restricted)" : "Lock Day Ledger & Issue Bank Deposit Slip"}</span>
                     </>
                   )}
                 </button>

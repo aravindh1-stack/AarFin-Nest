@@ -150,3 +150,22 @@ h1, h2, h3, h4, h5, h6 {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
+
+/* PWA Standalone Mobile App Mode */
+@media all and (display-mode: standalone) {
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input, textarea, table, pre, code, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Padding for iOS Dynamic Island / notch */
+  header {
+    padding-top: max(0.25rem, env(safe-area-inset-top));
+  }
+}

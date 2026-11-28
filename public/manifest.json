@@ -1,0 +1,63 @@
+{
+  "name": "NexFix Financial OS",
+  "short_name": "NexFix",
+  "description": "Autonomous Financial Operating System & Micro-Lending Hub",
+  "start_url": "/dashboard",
+  "id": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
+  "background_color": "#090B0A",
+  "theme_color": "#090B0A",
+  "orientation": "portrait",
+  "categories": ["finance", "business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Collections Hub",
+      "short_name": "Collections",
+      "description": "Open Field Collections & Daily Receipts",
+      "url": "/dashboard/collections",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Route Beats",
+      "short_name": "Routes",
+      "description": "View customer field routes and stops",
+      "url": "/dashboard/routes",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "EOD Reconciliation",
+      "short_name": "Reconcile",
+      "description": "Cash drawer tally & end of day sign-off",
+      "url": "/dashboard/reconciliation",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

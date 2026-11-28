@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { SkeletonBlock } from "@/components/skeleton-block";
 import { useAuth } from "@/components/auth/auth-context";
+import { hasPermission, getActionRestrictionTooltip } from "@/lib/auth/rbac";
 import {
   Layers,
   Sparkles,
@@ -33,7 +34,8 @@ interface Batch {
 export default function SchemesPage() {
   const { role } = useAuth();
   const isReadOnlyViewer = role === "VIEWER";
-  const READ_ONLY_TOOLTIP = "Read-only access: Mutations restricted";
+  const canManageSchemes = hasPermission(role, "canManageSchemes");
+  const restrictionTooltip = getActionRestrictionTooltip(role, "manage_schemes") || "Mutations restricted";
 
   const [batches, setBatches] = useState<Batch[]>([]);
   const [customerCounts, setCustomerCounts] = useState<Record<string, number>>({});
@@ -95,8 +97,8 @@ export default function SchemesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnlyViewer) {
-      setFormError(READ_ONLY_TOOLTIP);
+    if (!canManageSchemes) {
+      setFormError(restrictionTooltip);
       return;
     }
     setSubmitting(true);
@@ -178,7 +180,7 @@ export default function SchemesPage() {
               Active cycle progression, installment rules, and chit auction pools
             </p>
           </div>
-          {!isReadOnlyViewer ? (
+          {canManageSchemes ? (
             <button
               type="button"
               onClick={() => setShowModal(true)}
@@ -191,7 +193,7 @@ export default function SchemesPage() {
             <button
               type="button"
               disabled
-              title={READ_ONLY_TOOLTIP}
+              title={restrictionTooltip}
               className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600/40 text-white font-bold dark:bg-[#10B981]/40 dark:text-black px-4 py-2 text-xs shadow-xs opacity-50 cursor-not-allowed"
             >
               <Plus className="h-4 w-4" />
@@ -210,7 +212,7 @@ export default function SchemesPage() {
               <Layers className="mx-auto h-8 w-8 text-slate-300 dark:text-neutral-600 mb-2" />
               <p className="text-sm font-medium text-slate-900 dark:text-white">No active schemes found</p>
               <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400">Create your first Palagara Seetu or Kandhu batch to begin.</p>
-              {!isReadOnlyViewer ? (
+              {canManageSchemes ? (
                 <button
                   type="button"
                   onClick={() => setShowModal(true)}
@@ -223,7 +225,7 @@ export default function SchemesPage() {
                 <button
                   type="button"
                   disabled
-                  title={READ_ONLY_TOOLTIP}
+                  title={restrictionTooltip}
                   className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600/40 text-white font-bold dark:bg-[#10B981]/40 dark:text-black px-4 py-2 text-xs opacity-50 cursor-not-allowed"
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -338,22 +340,22 @@ export default function SchemesPage() {
 
                     <button
                       type="button"
-                      disabled={isReadOnlyViewer}
-                      title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                      disabled={!canManageSchemes}
+                      title={!canManageSchemes ? restrictionTooltip : undefined}
                       onClick={() => {
-                        if (isReadOnlyViewer) return;
+                        if (!canManageSchemes) return;
                         setSelectedAuctionBatch(b);
                         setShowAuctionModal(true);
                         setAuctionSuccess(false);
                       }}
                       className={`w-full flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 transition ${
-                        isReadOnlyViewer
+                        !canManageSchemes
                           ? "opacity-50 cursor-not-allowed"
                           : "hover:bg-emerald-500/20 active:scale-98 cursor-pointer"
                       }`}
                     >
                       <Sparkles className="h-4 w-4" />
-                      <span>{isReadOnlyViewer ? "Run Auction (Mutations Restricted)" : "Run Chit Auction & Dividend"}</span>
+                      <span>{!canManageSchemes ? "Run Auction (Restricted)" : "Run Chit Auction & Dividend"}</span>
                     </button>
                   </div>
                 </div>

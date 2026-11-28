@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/backend/config/supabaseAdmin";
 import { normalizeRole, SessionUser, PRIMARY_OWNER_EMAIL, UserRole } from "@/lib/auth/rbac";
 import { storeAuthToken } from "@/lib/auth/tokens";
 import { sendTransactionalEmail, buildVerificationEmailHtml } from "@/lib/auth/email";
-import { assertNotViewer } from "@/lib/auth/api-guard";
+import { requirePermission } from "@/lib/auth/api-guard";
 
 // Helper to extract session from request
 function getCallerUser(request: NextRequest): SessionUser | null {
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
  * Exclusive to SUPER_ADMIN
  */
 export async function POST(request: NextRequest) {
-  const forbidden = assertNotViewer(request);
+  const forbidden = requirePermission(request, "canManageTeam");
   if (forbidden) return forbidden;
 
   try {
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
  * Exclusive to SUPER_ADMIN
  */
 export async function PATCH(request: NextRequest) {
-  const forbidden = assertNotViewer(request);
+  const forbidden = requirePermission(request, "canManageTeam");
   if (forbidden) return forbidden;
 
   try {
@@ -191,7 +191,7 @@ export async function PATCH(request: NextRequest) {
  * Exclusive to SUPER_ADMIN
  */
 export async function DELETE(request: NextRequest) {
-  const forbidden = assertNotViewer(request);
+  const forbidden = requirePermission(request, "canManageTeam");
   if (forbidden) return forbidden;
 
   try {

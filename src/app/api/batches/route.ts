@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BatchesBackendService } from '@/backend/services/dbService';
-import { assertNotViewer } from '@/lib/auth/api-guard';
+import { requirePermission } from '@/lib/auth/api-guard';
 
 export async function GET() {
   try {
@@ -12,8 +12,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  // Read-only lockdown for VIEWER (Auditor)
-  const forbidden = assertNotViewer(request);
+  // Enforce role permissions: SUPER_ADMIN & ADMIN allowed; EDITOR & VIEWER denied
+  const forbidden = requirePermission(request, 'canManageSchemes');
   if (forbidden) return forbidden;
 
   try {

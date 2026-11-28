@@ -6,9 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.3",
+    "@capacitor/core": "^8.6.3",
     "@supabase/supabase-js": "^2.48.1",
     "clsx": "^2.1.1",
     "jspdf": "^2.5.2",
@@ -21,6 +25,7 @@
     "tailwind-merge": "^3.0.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.3",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20.17.0",
     "@types/react": "^19.0.0",

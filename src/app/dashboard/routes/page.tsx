@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { SkeletonBlock } from "@/components/skeleton-block";
 import { useAuth } from "@/components/auth/auth-context";
+import { hasPermission, getActionRestrictionTooltip } from "@/lib/auth/rbac";
 import { MapPin, Plus, X, AlertCircle, Users, UserCheck, ArrowRight } from "lucide-react";
 
 interface Group {
@@ -18,7 +19,8 @@ interface Group {
 export default function RoutesPage() {
   const { role } = useAuth();
   const isReadOnlyViewer = role === "VIEWER";
-  const READ_ONLY_TOOLTIP = "Read-only access: Mutations restricted";
+  const canManageRoutes = hasPermission(role, "canManageRoutes");
+  const restrictionTooltip = getActionRestrictionTooltip(role, "manage_routes") || "Mutations restricted";
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [customerCounts, setCustomerCounts] = useState<Record<string, number>>({});
@@ -68,8 +70,8 @@ export default function RoutesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnlyViewer) {
-      setFormError(READ_ONLY_TOOLTIP);
+    if (!canManageRoutes) {
+      setFormError(restrictionTooltip);
       return;
     }
     setSubmitting(true);
@@ -121,7 +123,7 @@ export default function RoutesPage() {
               Active beat allocations, customer counts, and field collection officer assignments
             </p>
           </div>
-          {!isReadOnlyViewer ? (
+          {canManageRoutes ? (
             <button
               type="button"
               onClick={() => setShowModal(true)}
@@ -134,7 +136,7 @@ export default function RoutesPage() {
             <button
               type="button"
               disabled
-              title={READ_ONLY_TOOLTIP}
+              title={restrictionTooltip}
               className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600/40 text-white font-bold dark:bg-[#10B981]/40 dark:text-black px-4 py-2 text-xs shadow-xs opacity-50 cursor-not-allowed"
             >
               <Plus className="h-4 w-4" />
@@ -153,7 +155,7 @@ export default function RoutesPage() {
               <MapPin className="mx-auto h-8 w-8 text-slate-300 dark:text-neutral-600 mb-2" />
               <p className="text-sm font-medium text-slate-900 dark:text-white">No route beats found</p>
               <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400">Create your first geographical collection group to partition accounts.</p>
-              {!isReadOnlyViewer ? (
+              {canManageRoutes ? (
                 <button
                   type="button"
                   onClick={() => setShowModal(true)}
@@ -166,7 +168,7 @@ export default function RoutesPage() {
                 <button
                   type="button"
                   disabled
-                  title={READ_ONLY_TOOLTIP}
+                  title={restrictionTooltip}
                   className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600/40 text-white font-bold dark:bg-[#10B981]/40 dark:text-black px-4 py-2 text-xs opacity-50 cursor-not-allowed"
                 >
                   <Plus className="h-3.5 w-3.5" />

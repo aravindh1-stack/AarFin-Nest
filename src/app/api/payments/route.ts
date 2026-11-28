@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/backend/config/supabaseAdmin';
-import { assertNotViewer } from '@/lib/auth/api-guard';
+import { requirePermission } from '@/lib/auth/api-guard';
 import crypto from 'crypto';
 
 export async function GET() {
@@ -14,8 +14,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  // Read-only lockdown for VIEWER (Auditor)
-  const forbidden = assertNotViewer(request);
+  // Enforce role permissions: SUPER_ADMIN, ADMIN, EDITOR allowed; VIEWER denied
+  const forbidden = requirePermission(request, 'canRecordPayments');
   if (forbidden) return forbidden;
 
   try {

@@ -6,6 +6,7 @@ import { MemberDrawer } from "@/components/collections/member-drawer";
 import { SkeletonBlock } from "@/components/skeleton-block";
 import { ReceiptModal, type ReceiptData } from "@/components/collections/receipt-modal";
 import { useAuth } from "@/components/auth/auth-context";
+import { hasPermission, getActionRestrictionTooltip } from "@/lib/auth/rbac";
 import { Search, Zap, BookOpen, RotateCcw, Users, ArrowRight } from "lucide-react";
 
 const filters = ["All", "Has Dues", "Has Advance", "Fully Paid"] as const;
@@ -18,7 +19,8 @@ function formatCurrency(value: number) {
 export function CollectionsHub() {
   const { role } = useAuth();
   const isReadOnlyViewer = role === "VIEWER";
-  const READ_ONLY_TOOLTIP = "Read-only access: Mutations restricted";
+  const canRecordPayments = hasPermission(role, "canRecordPayments");
+  const recordTooltip = getActionRestrictionTooltip(role, "record_payment") || "Mutations restricted";
 
   const [memberList, setMemberList] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -303,7 +305,7 @@ export function CollectionsHub() {
   }, [memberList, selectedRoute]);
 
   const handleQuickPay = async (member: Member, amount: number) => {
-    if (isReadOnlyViewer) return;
+    if (!canRecordPayments) return;
     if (!amount || quickPayingId) return;
     setQuickPayingId(member.id);
 
@@ -577,15 +579,15 @@ export function CollectionsHub() {
                   {member.totalPendingDues > 0 ? (
                     <button
                       type="button"
-                      disabled={isPaying || isReadOnlyViewer}
-                      title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                      disabled={isPaying || !canRecordPayments}
+                      title={!canRecordPayments ? recordTooltip : undefined}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (isReadOnlyViewer) return;
+                        if (!canRecordPayments) return;
                         handleQuickPay(member, cycleDueAmt);
                       }}
                       className={`min-h-[48px] rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-3 text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-500 dark:hover:bg-[#0EA57E] active:scale-98 transition disabled:opacity-50 shadow-xs ${
-                        isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                        !canRecordPayments ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                       }`}
                     >
                       <Zap className="h-4 w-4" />
@@ -594,15 +596,15 @@ export function CollectionsHub() {
                   ) : (
                     <button
                       type="button"
-                      disabled={isReadOnlyViewer}
-                      title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                      disabled={!canRecordPayments}
+                      title={!canRecordPayments ? recordTooltip : undefined}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (isReadOnlyViewer) return;
+                        if (!canRecordPayments) return;
                         setSelected(member);
                       }}
                       className={`min-h-[48px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center justify-center gap-1.5 hover:bg-emerald-500/20 active:scale-98 transition ${
-                        isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                        !canRecordPayments ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                       }`}
                     >
                       <span>Collect Advance</span>
@@ -715,15 +717,15 @@ export function CollectionsHub() {
                           {member.totalPendingDues > 0 && (
                             <button
                               type="button"
-                              disabled={isPaying || isReadOnlyViewer}
-                              title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                              disabled={isPaying || !canRecordPayments}
+                              title={!canRecordPayments ? recordTooltip : undefined}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (isReadOnlyViewer) return;
+                                if (!canRecordPayments) return;
                                 handleQuickPay(member, cycleDueAmt);
                               }}
                               className={`rounded-lg bg-emerald-600 text-white dark:bg-[#10B981] dark:text-black px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-emerald-500 dark:hover:bg-[#0EA57E] disabled:opacity-50 transition ${
-                                isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                !canRecordPayments ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                               }`}
                             >
                               {isPaying ? "Saving..." : `Collect ${formatCurrency(cycleDueAmt)}`}

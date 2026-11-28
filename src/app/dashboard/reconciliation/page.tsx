@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
+import { useAuth } from "@/components/auth/auth-context";
 import {
   ShieldCheck,
   AlertCircle,
@@ -10,6 +11,7 @@ import {
   Banknote,
   Coins,
   CheckCircle2,
+  FileCheck2,
 } from "lucide-react";
 
 interface RouteReconciliation {
@@ -57,6 +59,10 @@ const mockRoutes: RouteReconciliation[] = [
 ];
 
 export default function EODReconciliationPage() {
+  const { role } = useAuth();
+  const isReadOnlyViewer = role === "VIEWER";
+  const READ_ONLY_TOOLTIP = "Read-only access: Mutations restricted";
+
   const [selectedRouteId, setSelectedRouteId] = useState<string>("route-01");
   const [denominations, setDenominations] = useState<{ [key: number]: number }>({
     500: 80,
@@ -68,6 +74,31 @@ export default function EODReconciliationPage() {
   });
   const [cashierNotes, setCashierNotes] = useState("");
   const [isLocked, setIsLocked] = useState(false);
+  const [isSignedOff, setIsSignedOff] = useState(false);
+
+  const handleSignOff = () => {
+    if (isReadOnlyViewer) return;
+    setIsSignedOff(true);
+  };
+
+  const handleLockLedger = async () => {
+    if (isReadOnlyViewer) return;
+    setIsLocked(true);
+    try {
+      await fetch("/api/eod/lock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          route_id: selectedRouteId,
+          cashier_notes: cashierNotes,
+          session_stamp: `EOD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}`,
+          counted_cash: countedPhysicalCash,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to sync EOD lock to API:", err);
+    }
+  };
 
   const activeRoute = useMemo(() => {
     return mockRoutes.find((r) => r.id === selectedRouteId) || mockRoutes[0];
@@ -294,14 +325,42 @@ export default function EODReconciliationPage() {
               </div>
 
               <div className="space-y-2 pt-2">
+                {/* Cashier Tally Sign-Off */}
                 <button
                   type="button"
-                  disabled={isLocked}
-                  onClick={() => setIsLocked(true)}
-                  className={`w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold transition shadow-xs cursor-pointer ${
-                    isLocked
+                  disabled={isReadOnlyViewer || isSignedOff || isLocked}
+                  title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                  onClick={handleSignOff}
+                  className={`w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold border transition shadow-xs ${
+                    isReadOnlyViewer
+                      ? "border-slate-300 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600 opacity-50 cursor-not-allowed"
+                      : isSignedOff
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 cursor-default"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                  }`}
+                >
+                  <FileCheck2 className="h-4 w-4" />
+                  <span>
+                    {isReadOnlyViewer
+                      ? "Cashier Tally Sign-Off (Restricted)"
+                      : isSignedOff
+                      ? "Cashier Tally Signed Off ✓"
+                      : "Cashier Tally Sign-Off"}
+                  </span>
+                </button>
+
+                {/* Lock Day Ledger Button */}
+                <button
+                  type="button"
+                  disabled={isReadOnlyViewer || isLocked}
+                  title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
+                  onClick={handleLockLedger}
+                  className={`w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold transition shadow-xs ${
+                    isReadOnlyViewer
+                      ? "bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-600 opacity-50 cursor-not-allowed"
+                      : isLocked
                       ? "bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
-                      : "bg-teal-600 text-white hover:bg-teal-500 dark:bg-teal-500 dark:hover:bg-teal-400 dark:text-slate-950"
+                      : "bg-teal-600 text-white hover:bg-teal-500 dark:bg-teal-500 dark:hover:bg-teal-400 dark:text-slate-950 cursor-pointer"
                   }`}
                 >
                   {isLocked ? (
@@ -312,7 +371,7 @@ export default function EODReconciliationPage() {
                   ) : (
                     <>
                       <Lock className="h-4 w-4" />
-                      <span>Lock Ledger & Issue Bank Deposit Slip</span>
+                      <span>{isReadOnlyViewer ? "Lock Day Ledger (Restricted)" : "Lock Day Ledger & Issue Bank Deposit Slip"}</span>
                     </>
                   )}
                 </button>

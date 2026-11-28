@@ -5,6 +5,7 @@ import { type Member } from "@/lib/mock-members";
 import { MemberDrawer } from "@/components/collections/member-drawer";
 import { SkeletonBlock } from "@/components/skeleton-block";
 import { ReceiptModal, type ReceiptData } from "@/components/collections/receipt-modal";
+import { useAuth } from "@/components/auth/auth-context";
 import { Search, Zap, BookOpen, RotateCcw, Users, ArrowRight } from "lucide-react";
 
 const filters = ["All", "Has Dues", "Has Advance", "Fully Paid"] as const;
@@ -15,6 +16,10 @@ function formatCurrency(value: number) {
 }
 
 export function CollectionsHub() {
+  const { role } = useAuth();
+  const isReadOnlyViewer = role === "VIEWER";
+  const READ_ONLY_TOOLTIP = "Read-only access: Mutations restricted";
+
   const [memberList, setMemberList] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -298,6 +303,7 @@ export function CollectionsHub() {
   }, [memberList, selectedRoute]);
 
   const handleQuickPay = async (member: Member, amount: number) => {
+    if (isReadOnlyViewer) return;
     if (!amount || quickPayingId) return;
     setQuickPayingId(member.id);
 
@@ -493,6 +499,14 @@ export function CollectionsHub() {
             style={{ width: `${Math.min(routeStats.collectionRate, 100)}%` }}
           />
         </div>
+
+        {/* Read-only Auditor Banner */}
+        {isReadOnlyViewer && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-medium text-amber-800 dark:text-amber-300">
+            <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <span>Auditor / Read-Only Mode Active: Payment recording, dues collection, and ledger mutations are restricted.</span>
+          </div>
+        )}
       </div>
 
       {/* MOBILE STACKED CARDS (Touch-optimized < md, min 48px tap targets) */}
@@ -563,12 +577,16 @@ export function CollectionsHub() {
                   {member.totalPendingDues > 0 ? (
                     <button
                       type="button"
-                      disabled={isPaying}
+                      disabled={isPaying || isReadOnlyViewer}
+                      title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (isReadOnlyViewer) return;
                         handleQuickPay(member, cycleDueAmt);
                       }}
-                      className="min-h-[48px] rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-3 text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-500 dark:hover:bg-[#0EA57E] active:scale-98 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                      className={`min-h-[48px] rounded-xl bg-emerald-600 text-white font-bold dark:bg-[#10B981] dark:text-black px-3 text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-500 dark:hover:bg-[#0EA57E] active:scale-98 transition disabled:opacity-50 shadow-xs ${
+                        isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                      }`}
                     >
                       <Zap className="h-4 w-4" />
                       <span>{isPaying ? "Recording..." : `Collect ${formatCurrency(cycleDueAmt)}`}</span>
@@ -576,11 +594,16 @@ export function CollectionsHub() {
                   ) : (
                     <button
                       type="button"
+                      disabled={isReadOnlyViewer}
+                      title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (isReadOnlyViewer) return;
                         setSelected(member);
                       }}
-                      className="min-h-[48px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center justify-center gap-1.5 hover:bg-emerald-500/20 active:scale-98 transition cursor-pointer"
+                      className={`min-h-[48px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center justify-center gap-1.5 hover:bg-emerald-500/20 active:scale-98 transition ${
+                        isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                      }`}
                     >
                       <span>Collect Advance</span>
                     </button>
@@ -692,12 +715,16 @@ export function CollectionsHub() {
                           {member.totalPendingDues > 0 && (
                             <button
                               type="button"
-                              disabled={isPaying}
+                              disabled={isPaying || isReadOnlyViewer}
+                              title={isReadOnlyViewer ? READ_ONLY_TOOLTIP : undefined}
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if (isReadOnlyViewer) return;
                                 handleQuickPay(member, cycleDueAmt);
                               }}
-                              className="rounded-lg bg-emerald-600 text-white dark:bg-[#10B981] dark:text-black px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-emerald-500 dark:hover:bg-[#0EA57E] disabled:opacity-50 cursor-pointer transition"
+                              className={`rounded-lg bg-emerald-600 text-white dark:bg-[#10B981] dark:text-black px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-emerald-500 dark:hover:bg-[#0EA57E] disabled:opacity-50 transition ${
+                                isReadOnlyViewer ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                              }`}
                             >
                               {isPaying ? "Saving..." : `Collect ${formatCurrency(cycleDueAmt)}`}
                             </button>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BatchesBackendService } from '@/backend/services/dbService';
+import { assertNotViewer } from '@/lib/auth/api-guard';
 
 export async function GET() {
   try {
@@ -11,6 +12,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // Read-only lockdown for VIEWER (Auditor)
+  const forbidden = assertNotViewer(request);
+  if (forbidden) return forbidden;
+
   try {
     const body = await request.json();
     const newBatch = await BatchesBackendService.createBatch(body);

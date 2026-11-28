@@ -4,7 +4,7 @@
   "webDir": "public",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://aarfin-nest.vercel.app",
+    "url": "https://nexfix.aarga.org",
     "cleartext": true
   },
   "android": {

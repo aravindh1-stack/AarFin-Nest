@@ -1,0 +1,13 @@
+{
+	"appId": "org.aarga.nexfix",
+	"appName": "NexFix Financial OS",
+	"webDir": "public",
+	"bundledWebRuntime": false,
+	"server": {
+		"url": "https://nexfix.aarga.org",
+		"cleartext": true
+	},
+	"android": {
+		"allowMixedContent": true
+	}
+}

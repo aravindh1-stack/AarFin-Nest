@@ -20,9 +20,6 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -30,7 +27,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build Next.js Web App
         run: npm run build
@@ -44,12 +41,12 @@ jobs:
       - name: Build Debug APK (For Testing on Phone)
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Build Release Bundle (For Google Play Store)
         run: |
           cd android
-          ./gradlew bundleRelease --stacktrace || true
+          ./gradlew bundleRelease --no-daemon --stacktrace || true
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4

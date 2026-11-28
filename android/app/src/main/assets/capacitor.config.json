@@ -1,13 +1,25 @@
 {
-	"appId": "org.aarga.nexfix",
-	"appName": "NexFix Financial OS",
-	"webDir": "public",
-	"bundledWebRuntime": false,
-	"server": {
-		"url": "https://nexfix.aarga.org",
-		"cleartext": true
-	},
-	"android": {
-		"allowMixedContent": true
-	}
+  "appId": "org.aarga.nexfix",
+  "appName": "NexFix Financial OS",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://nexfix.aarga.org",
+    "cleartext": true,
+    "allowNavigation": [
+      "nexfix.aarga.org",
+      "*.aarga.org",
+      "nex-fix-pay.vercel.app",
+      "*.vercel.app",
+      "accounts.google.com",
+      "*.google.com",
+      "*.supabase.co",
+      "*"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
 }

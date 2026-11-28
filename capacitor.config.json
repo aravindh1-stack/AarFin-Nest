@@ -5,9 +5,21 @@
   "bundledWebRuntime": false,
   "server": {
     "url": "https://nexfix.aarga.org",
-    "cleartext": true
+    "cleartext": true,
+    "allowNavigation": [
+      "nexfix.aarga.org",
+      "*.aarga.org",
+      "nex-fix-pay.vercel.app",
+      "*.vercel.app",
+      "accounts.google.com",
+      "*.google.com",
+      "*.supabase.co",
+      "*"
+    ]
   },
   "android": {
-    "allowMixedContent": true
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
   }
 }
